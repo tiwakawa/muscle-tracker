@@ -29,6 +29,8 @@ services:
       DATABASE_HOST: db
       DATABASE_USER: root
       DATABASE_PASSWORD: password
+      GOOGLE_CREDENTIALS_JSON: ${GOOGLE_CREDENTIALS_JSON:-}
+      GOOGLE_SPREADSHEET_ID: ${GOOGLE_SPREADSHEET_ID:-}
     depends_on:
       db:
         condition: service_healthy

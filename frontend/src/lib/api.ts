@@ -153,6 +153,12 @@ export const workoutSetsApi = {
     ),
 };
 
+// ---- Export ----
+export const exportApi = {
+  exportCurrentMonth: () =>
+    request<{ url: string }>("POST", "/api/v1/export"),
+};
+
 // ---- Body Records ----
 export const bodyRecordsApi = {
   list: () => request<BodyRecord[]>("GET", "/api/v1/body_records"),

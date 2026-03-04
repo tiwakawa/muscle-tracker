@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProtectedPage from "@/components/ProtectedPage";
 import WeightChart from "@/components/WeightChart";
-import { workoutsApi, bodyRecordsApi } from "@/lib/api";
+import { workoutsApi, bodyRecordsApi, exportApi } from "@/lib/api";
 import type { Workout, BodyRecord } from "@/lib/types";
 
 const CONDITION_EMOJI: Record<number, string> = {
@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [bodyRecords, setBodyRecords] = useState<BodyRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportState, setExportState] = useState<"idle" | "exporting" | "done" | "error">("idle");
+  const [exportUrl, setExportUrl] = useState<string>("");
+  const [exportError, setExportError] = useState<string>("");
 
   useEffect(() => {
     Promise.all([workoutsApi.list(), bodyRecordsApi.list()])
@@ -48,6 +51,19 @@ export default function DashboardPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleExport() {
+    setExportState("exporting");
+    setExportError("");
+    try {
+      const { url } = await exportApi.exportCurrentMonth();
+      setExportUrl(url);
+      setExportState("done");
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "エラーが発生しました");
+      setExportState("error");
+    }
+  }
 
   const recentWorkouts = workouts.slice(0, 5);
   const latestWeight = (() => {
@@ -73,6 +89,40 @@ export default function DashboardPage() {
               <span className="text-sm font-normal text-gray-400 ml-1">回</span>
             </p>
           </div>
+        </div>
+
+        {/* Export to Google Sheets */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-700">今月をSheetに同期</p>
+            <button
+              onClick={handleExport}
+              disabled={exportState === "exporting"}
+              className="flex items-center gap-2 bg-green-600 text-white text-sm px-4 py-2 rounded-xl font-medium disabled:opacity-60 hover:bg-green-700 transition-colors"
+            >
+              {exportState === "exporting" ? (
+                <>
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full inline-block" />
+                  同期中…
+                </>
+              ) : (
+                "Google Sheetsへ"
+              )}
+            </button>
+          </div>
+          {exportState === "done" && (
+            <a
+              href={exportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-green-700 underline break-all"
+            >
+              スプレッドシートを開く →
+            </a>
+          )}
+          {exportState === "error" && (
+            <p className="text-sm text-red-500">{exportError}</p>
+          )}
         </div>
 
         {/* Weight Chart */}

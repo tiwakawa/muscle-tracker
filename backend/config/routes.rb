@@ -9,6 +9,7 @@ Rails.application.routes.draw do
         resources :workout_sets, only: [:index, :create, :update, :destroy]
       end
       resources :body_records
+      post "export", to: "exports#create"
     end
   end
 

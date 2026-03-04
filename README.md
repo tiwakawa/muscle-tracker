@@ -135,6 +135,12 @@ bundle exec rails db:create db:migrate db:seed
 | PUT | `/api/v1/body_records/:id` | 更新 |
 | DELETE | `/api/v1/body_records/:id` | 削除 |
 
+### エクスポート
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/api/v1/export` | 今月のデータを Google Sheets へエクスポート |
+
 ---
 
 ## 画面構成
@@ -178,9 +184,51 @@ body_records    user_id, date, weight, body_fat_percentage, ...
 
 ---
 
+## Google Sheets 連携セットアップ
+
+ダッシュボードの「今月をSheetに同期」ボタンを使うには、以下の手順でGoogle Cloud の設定が必要です。
+
+### 1. Google Cloud Console でプロジェクト作成
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. 「プロジェクトを作成」から新規プロジェクトを作成
+
+### 2. Google Sheets API を有効化
+
+1. 「APIとサービス」→「ライブラリ」を開く
+2. 「Google Sheets API」を検索して有効化
+
+### 3. サービスアカウント作成・JSONキーダウンロード
+
+1. 「APIとサービス」→「認証情報」を開く
+2. 「認証情報を作成」→「サービスアカウント」を選択
+3. 名前を入力して作成（ロールは不要）
+4. 作成したサービスアカウントをクリック →「キー」タブ →「鍵を追加」→「JSONをダウンロード」
+
+### 4. スプレッドシート作成・サービスアカウントに編集権限付与
+
+1. [Google Sheets](https://sheets.google.com/) で新しいスプレッドシートを作成
+2. URLからスプレッドシートID（`/d/` と `/edit` の間の文字列）をメモ
+3. 「共有」からダウンロードしたJSONの `client_email` を追加し、「編集者」権限を付与
+
+### 5. 環境変数の設定
+
+```bash
+# JSONファイルの内容を1行にして環境変数に設定
+export GOOGLE_CREDENTIALS_JSON=$(cat /path/to/service-account.json)
+export GOOGLE_SPREADSHEET_ID=your_spreadsheet_id_here
+
+# Docker Compose を起動
+docker compose up
+```
+
+エクスポートすると `YYYY-MM-ワークアウト` と `YYYY-MM-ボディ` という名前のシートが自動作成され、今月分のデータが書き込まれます。
+
+---
+
 ## 今後の予定
 
-- [ ] **Google Sheets 連携** — 記録データを Google スプレッドシートへ自動エクスポート
+- [x] **Google Sheets 連携** — 記録データを Google スプレッドシートへ自動エクスポート
 - [ ] **デプロイ** — Kamal を使用して VPS へデプロイ（バックエンド）/ Vercel（フロントエンド）
 - [ ] **グラフ強化** — 種目別のボリューム推移グラフ、1RM推定
 - [ ] **トレーニングテンプレート** — よく使うセット構成の保存・呼び出し
