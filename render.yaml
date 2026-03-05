@@ -1,0 +1,42 @@
+# Render Blueprint — muscle-tracker API
+# ドキュメント: https://render.com/docs/blueprint-spec
+#
+# ⚠️  Render の管理 DB は PostgreSQL のみです。
+#    MySQL を使うには下記いずれかの外部サービスを利用してください:
+#    - PlanetScale  https://planetscale.com  (free tier あり)
+#    - Aiven        https://aiven.io         (free tier あり)
+#    - Railway      https://railway.app       (hobby plan あり)
+#    接続後、DATABASE_URL を Render ダッシュボードで設定してください。
+
+services:
+  - type: web
+    name: muscle-tracker-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /up
+    autoDeploy: true
+
+    # デプロイ前にマイグレーションを実行（ゼロダウンタイムデプロイ）
+    preDeployCommand: bundle exec rails db:migrate
+
+    envVars:
+      - key: RAILS_ENV
+        value: production
+
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+
+      # config/master.key の内容を Render ダッシュボードで設定
+      - key: RAILS_MASTER_KEY
+        sync: false
+
+      # 外部 MySQL の接続 URL: mysql2://user:pass@host:3306/dbname
+      - key: DATABASE_URL
+        sync: false
+
+      # Vercel の URL を設定: https://your-app.vercel.app
+      # 複数ある場合はカンマ区切り: https://a.vercel.app,https://custom.domain
+      - key: CORS_ORIGINS
+        sync: false

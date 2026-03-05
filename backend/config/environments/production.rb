@@ -21,14 +21,12 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  # Render.com はSSL終端プロキシ経由なので assume_ssl を有効化
+  config.assume_ssl = true
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
-
-  # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  # HTTPS 強制（ヘルスチェックは除外）
+  config.force_ssl = true
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -43,12 +41,11 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  config.cache_store = :solid_cache_store
+  # キャッシュは null_store（solid_cache は別DB不要のシンプル構成のため無効化）
+  config.cache_store = :null_store
 
-  # Replace the default in-process and non-durable queuing backend for Active Job.
-  config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # バックグラウンドジョブは非同期アダプタ（API-only のため solid_queue 不使用）
+  config.active_job.queue_adapter = :async
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
@@ -76,12 +73,8 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Render.com が自動設定する外部ホスト名を許可
+  # RENDER_EXTERNAL_HOSTNAME は Render が自動で環境変数に注入する
+  render_hostname = ENV["RENDER_EXTERNAL_HOSTNAME"]
+  config.hosts << render_hostname if render_hostname.present?
 end
