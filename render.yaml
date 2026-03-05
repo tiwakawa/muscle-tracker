@@ -15,9 +15,6 @@ services:
     healthCheckPath: /up
     autoDeploy: true
 
-    # デプロイ前にマイグレーションを実行（ゼロダウンタイムデプロイ）
-    preDeployCommand: bundle exec rails db:migrate
-
     envVars:
       - key: RAILS_ENV
         value: production
