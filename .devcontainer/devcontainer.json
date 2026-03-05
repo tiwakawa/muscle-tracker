@@ -7,7 +7,7 @@
   "mounts": [
     "source=${localEnv:HOME}/workspace/projects/dotfiles,target=/root/dotfiles,type=bind,consistency=cached"
   ],
-  "postCreateCommand": "bash /root/dotfiles/setup.sh; cd /workspace/backend && bundle install && cd /workspace/frontend && npm install",
+  "postCreateCommand": "bash /workspace/.devcontainer/setup_dotfiles.sh && cd /workspace/backend && bundle install && cd /workspace/frontend && npm install",
   "remoteEnv": {
     "SHELL": "/usr/bin/zsh"
   },
