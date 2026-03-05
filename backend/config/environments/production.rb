@@ -77,4 +77,5 @@ Rails.application.configure do
   # RENDER_EXTERNAL_HOSTNAME は Render が自動で環境変数に注入する
   render_hostname = ENV["RENDER_EXTERNAL_HOSTNAME"]
   config.hosts << render_hostname if render_hostname.present?
+  config.hosts << "muscle-tracker-api.onrender.com"
 end
