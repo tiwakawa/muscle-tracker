@@ -1,12 +1,9 @@
 # Render Blueprint — muscle-tracker API
 # ドキュメント: https://render.com/docs/blueprint-spec
 #
-# ⚠️  Render の管理 DB は PostgreSQL のみです。
-#    MySQL を使うには下記いずれかの外部サービスを利用してください:
-#    - PlanetScale  https://planetscale.com  (free tier あり)
-#    - Aiven        https://aiven.io         (free tier あり)
-#    - Railway      https://railway.app       (hobby plan あり)
-#    接続後、DATABASE_URL を Render ダッシュボードで設定してください。
+# DB は Neon (serverless PostgreSQL) を使用します。
+# https://neon.tech でプロジェクト作成後、接続 URL を DATABASE_URL に設定してください。
+# 形式: postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 
 services:
   - type: web
@@ -32,7 +29,7 @@ services:
       - key: RAILS_MASTER_KEY
         sync: false
 
-      # 外部 MySQL の接続 URL: mysql2://user:pass@host:3306/dbname
+      # Neon の接続 URL: postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
       - key: DATABASE_URL
         sync: false
 

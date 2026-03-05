@@ -5,10 +5,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
   && apt-get install -y nodejs \
   && npm install -g npm@latest
 
-# System dependencies for Rails + MySQL
+# System dependencies for Rails + PostgreSQL
 RUN apt-get update -qq && apt-get install -y \
   build-essential \
-  default-libmysqlclient-dev \
+  libpq-dev \
   libyaml-dev \
   git \
   curl \

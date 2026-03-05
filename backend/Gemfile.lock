@@ -209,8 +209,6 @@ GEM
       prism (~> 1.5)
     msgpack (1.8.0)
     multi_json (1.19.1)
-    mysql2 (0.5.7)
-      bigdecimal
     net-http (0.9.1)
       uri (>= 0.11.1)
     net-imap (0.6.3)
@@ -239,6 +237,8 @@ GEM
     parser (3.3.10.2)
       ast (~> 2.4.1)
       racc
+    pg (1.6.3-aarch64-linux)
+    pg (1.6.3-x86_64-linux)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -428,7 +428,7 @@ DEPENDENCIES
   google-apis-sheets_v4
   image_processing (~> 1.2)
   kamal
-  mysql2 (~> 0.5)
+  pg (~> 1.5)
   puma (>= 5.0)
   rack-cors
   rails (~> 8.1.2)

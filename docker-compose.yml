@@ -1,15 +1,16 @@
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: muscle_tracker_development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: muscle_tracker_development
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ppassword"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,7 +28,7 @@ services:
     environment:
       RAILS_ENV: development
       DATABASE_HOST: db
-      DATABASE_USER: root
+      DATABASE_USER: postgres
       DATABASE_PASSWORD: password
       GOOGLE_CREDENTIALS_JSON: ${GOOGLE_CREDENTIALS_JSON:-}
       GOOGLE_SPREADSHEET_ID: ${GOOGLE_SPREADSHEET_ID:-}
@@ -60,7 +61,7 @@ services:
     environment:
       RAILS_ENV: development
       DATABASE_HOST: db
-      DATABASE_USER: root
+      DATABASE_USER: postgres
       DATABASE_PASSWORD: password
       NEXT_PUBLIC_API_URL: http://localhost:3000
     depends_on:
@@ -68,5 +69,5 @@ services:
         condition: service_healthy
 
 volumes:
-  mysql_data:
+  postgres_data:
   bundle_cache:

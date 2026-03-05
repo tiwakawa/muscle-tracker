@@ -11,7 +11,10 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
-  create_table "body_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+
+  create_table "body_records", force: :cascade do |t|
     t.decimal "body_fat_percentage", precision: 5, scale: 2
     t.datetime "created_at", null: false
     t.date "date", null: false
@@ -22,14 +25,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
     t.index ["user_id"], name: "index_body_records_on_user_id"
   end
 
-  create_table "exercises", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "exercises", force: :cascade do |t|
     t.string "category", null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.index ["name"], name: "index_exercises_on_name", unique: true
   end
 
-  create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.boolean "allow_password_change", default: false
     t.datetime "confirmation_sent_at"
     t.string "confirmation_token"
@@ -54,7 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
-  create_table "workout_sets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "workout_sets", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "exercise_id", null: false
     t.integer "reps"
@@ -65,7 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
     t.index ["workout_id"], name: "index_workout_sets_on_workout_id"
   end
 
-  create_table "workouts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "workouts", force: :cascade do |t|
     t.integer "condition"
     t.datetime "created_at", null: false
     t.date "date", null: false

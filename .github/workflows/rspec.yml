@@ -16,21 +16,22 @@ jobs:
 
     services:
       db:
-        image: mysql:8.0
+        image: postgres:16
         env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: app_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: app_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -ppassword"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
       RAILS_ENV: test
-      DATABASE_USER: root
+      DATABASE_USER: postgres
       DATABASE_PASSWORD: password
       DATABASE_HOST: 127.0.0.1
 

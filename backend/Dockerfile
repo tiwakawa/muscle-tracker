@@ -2,7 +2,7 @@ FROM ruby:3.3-slim
 
 RUN apt-get update -qq && apt-get install -y \
   build-essential \
-  default-libmysqlclient-dev \
+  libpq-dev \
   libyaml-dev \
   git \
   curl \
