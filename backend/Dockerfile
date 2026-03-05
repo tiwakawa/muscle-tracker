@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # 本番起動コマンド（docker-compose は command: で上書きするため開発環境に影響しない）
-CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
+CMD bundle exec rails db:migrate && bundle exec puma -C config/puma.rb
