@@ -1,5 +1,8 @@
 # muscle-tracker
 
+[![RSpec](https://github.com/tiwakawa/muscle-tracker/actions/workflows/rspec.yml/badge.svg)](https://github.com/tiwakawa/muscle-tracker/actions/workflows/rspec.yml)
+[![Frontend CI](https://github.com/tiwakawa/muscle-tracker/actions/workflows/frontend.yml/badge.svg)](https://github.com/tiwakawa/muscle-tracker/actions/workflows/frontend.yml)
+
 筋トレ・体重記録アプリ。スマートフォンに最適化したモバイルファーストのWebアプリです。
 
 ## 画面イメージ
