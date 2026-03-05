@@ -22,18 +22,6 @@ function formatDate(dateStr: string) {
   })`;
 }
 
-function exerciseSummary(workout: Workout): string {
-  if (!workout.workout_sets?.length) return "セットなし";
-  const counts: Record<string, number> = {};
-  for (const s of workout.workout_sets) {
-    const name = s.exercise?.name ?? "不明";
-    counts[name] = (counts[name] ?? 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([n, c]) => `${n} ${c}セット`)
-    .join("、");
-}
-
 export default function WorkoutsPage() {
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
