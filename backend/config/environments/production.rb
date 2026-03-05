@@ -73,9 +73,6 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Render.com が自動設定する外部ホスト名を許可
-  # RENDER_EXTERNAL_HOSTNAME は Render が自動で環境変数に注入する
-  render_hostname = ENV["RENDER_EXTERNAL_HOSTNAME"]
-  config.hosts << render_hostname if render_hostname.present?
-  config.hosts << "muscle-tracker-api.onrender.com"
+  # ホスト制限を無効化（トークン認証 + CORS で保護済みのため不要）
+  config.hosts.clear
 end
