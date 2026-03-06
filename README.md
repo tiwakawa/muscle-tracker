@@ -5,11 +5,22 @@
 
 筋トレ・体重記録アプリ。スマートフォンに最適化したモバイルファーストのWebアプリです。
 
-## 画面イメージ
+## 本番環境
 
-| ダッシュボード | ワークアウト一覧 | ワークアウト記録 | ボディ記録 |
-|---|---|---|---|
-| 体重グラフ・直近の記録 | セット詳細表示・編集削除 | 日付/コンディション/セット入力 | 体重・体脂肪グラフ |
+| サービス | URL |
+|---|---|
+| フロントエンド | https://muscle-tracker-five.vercel.app |
+| バックエンド API | https://muscle-tracker-api.onrender.com |
+
+---
+
+## プロジェクト概要
+
+- ワークアウト（種目・セット・重量・回数）の記録・編集・削除
+- 体重・体脂肪率の記録とグラフ表示
+- ダッシュボードで体重推移と直近のワークアウトを確認
+- 今月のデータを Google Sheets へエクスポート
+- トークン認証によるユーザー管理
 
 ---
 
@@ -20,7 +31,7 @@
 |---|---|
 | Ruby | 3.3 |
 | Rails | 8.1 (API mode) |
-| MySQL | 8.0 |
+| PostgreSQL | 16 |
 | devise_token_auth | トークン認証 |
 
 ### フロントエンド
@@ -32,8 +43,43 @@
 | Recharts | グラフ描画 |
 
 ### インフラ・開発環境
-- Docker Compose
-- DevContainer (VS Code)
+| 用途 | 技術 |
+|---|---|
+| コンテナ | Docker Compose |
+| 開発環境 | DevContainer (VS Code) |
+| フロントエンドホスティング | Vercel |
+| バックエンドホスティング | Render.com |
+| データベース | Neon (Serverless PostgreSQL) |
+| CI/CD | GitHub Actions |
+
+---
+
+## アーキテクチャ
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     ユーザー                          │
+└───────────────────────┬─────────────────────────────┘
+                        │
+          ┌─────────────▼─────────────┐
+          │   Vercel (Next.js 14)     │
+          │   フロントエンド           │
+          │   muscle-tracker-five     │
+          │   .vercel.app             │
+          └─────────────┬─────────────┘
+                        │ HTTPS / JSON
+          ┌─────────────▼─────────────┐
+          │   Render.com (Docker)     │
+          │   Rails 8.1 API           │
+          │   muscle-tracker-api      │
+          │   .onrender.com           │
+          └─────────────┬─────────────┘
+                        │
+          ┌─────────────▼─────────────┐
+          │   Neon (PostgreSQL 16)    │
+          │   Serverless Database     │
+          └───────────────────────────┘
+```
 
 ---
 
@@ -77,7 +123,62 @@ bundle exec rails db:create db:migrate db:seed
 |---|---|
 | フロントエンド | http://localhost:3001 |
 | バックエンド (API) | http://localhost:3000 |
-| MySQL | localhost:3306 |
+| PostgreSQL | localhost:5432 |
+
+---
+
+## CI/CD
+
+GitHub Actions で以下のワークフローを自動実行しています。
+
+### RSpec（バックエンド）
+
+`main` ブランチへの push・PR 時に実行。
+
+- PostgreSQL 16 コンテナを起動
+- `bundle exec rspec` でモデル・リクエストスペックを実行
+
+### Frontend CI（フロントエンド）
+
+`main` ブランチへの push・PR 時に実行。
+
+- `npx tsc --noEmit` で TypeScript 型チェック
+- `npm run lint` で ESLint チェック
+
+---
+
+## デプロイ構成
+
+### フロントエンド（Vercel）
+
+GitHub の `main` ブランチへの push で自動デプロイ。
+
+設定が必要な環境変数：
+
+| 変数名 | 値 |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://muscle-tracker-api.onrender.com` |
+
+### バックエンド（Render.com）
+
+GitHub の `main` ブランチへの push で自動デプロイ（`render.yaml` で定義）。
+コンテナ起動時に `db:migrate` → `db:seed` → Puma の順で実行。
+
+設定が必要な環境変数：
+
+| 変数名 | 説明 |
+|---|---|
+| `RAILS_MASTER_KEY` | `backend/config/master.key` の内容 |
+| `DATABASE_URL` | Neon の接続 URL |
+| `CORS_ORIGINS` | Vercel の URL（例: `https://muscle-tracker-five.vercel.app`） |
+
+### データベース（Neon）
+
+Neon でプロジェクトを作成し、接続 URL を Render の `DATABASE_URL` に設定。
+
+```
+postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
+```
 
 ---
 
@@ -149,12 +250,12 @@ bundle exec rails db:create db:migrate db:seed
 ## 画面構成
 
 ```
-/login          ログイン・新規登録
-/               ダッシュボード（体重グラフ・直近ワークアウト）
-/workouts       ワークアウト一覧（種目・セット詳細表示、編集・削除）
-/workouts/new   ワークアウト記録（日付・コンディション・メモ・セット入力）
+/login              ログイン・新規登録
+/                   ダッシュボード（体重グラフ・直近ワークアウト）
+/workouts           ワークアウト一覧（種目・セット詳細表示、編集・削除）
+/workouts/new       ワークアウト記録（日付・コンディション・メモ・セット入力）
 /workouts/:id/edit  ワークアウト編集（セットの追加・更新・削除）
-/body           ボディ記録（体重・体脂肪グラフ、履歴一覧）
+/body               ボディ記録（体重・体脂肪グラフ、履歴一覧）
 ```
 
 ### コンポーネント構成
@@ -232,7 +333,7 @@ docker compose up
 ## 今後の予定
 
 - [x] **Google Sheets 連携** — 記録データを Google スプレッドシートへ自動エクスポート
-- [ ] **デプロイ** — Kamal を使用して VPS へデプロイ（バックエンド）/ Vercel（フロントエンド）
+- [x] **デプロイ** — Render (バックエンド) / Vercel (フロントエンド) / Neon (DB)
 - [ ] **グラフ強化** — 種目別のボリューム推移グラフ、1RM推定
 - [ ] **トレーニングテンプレート** — よく使うセット構成の保存・呼び出し
 - [ ] **PWA 対応** — ホーム画面追加、オフライン対応
