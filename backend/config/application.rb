@@ -29,7 +29,8 @@ module App
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
-    # devise_token_auth requires session/cookie middleware in API mode
+    # devise_token_auth calls bypass_sign_in (via Devise) after token auth,
+    # which writes to the session. Cookie/session middleware is required for this.
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
   end
