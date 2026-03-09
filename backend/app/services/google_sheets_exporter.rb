@@ -28,6 +28,8 @@ class GoogleSheetsExporter
     service
   end
 
+  CONDITION_LABELS = { 1 => "最悪", 2 => "悪い", 3 => "普通", 4 => "良い", 5 => "最高" }.freeze
+
   def export_workouts(year_month)
     sheet_name = "#{year_month}-ワークアウト"
     gid = ensure_sheet(sheet_name)
@@ -43,7 +45,7 @@ class GoogleSheetsExporter
     rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "コンディション", "メモ"]]
     workouts.each do |workout|
       if workout.workout_sets.empty?
-        rows << [workout.date.to_s, "", "", "", "", workout.condition, workout.memo]
+        rows << [workout.date.to_s, "", "", "", "", CONDITION_LABELS[workout.condition], workout.memo]
       else
         workout.workout_sets.each do |ws|
           rows << [
@@ -52,7 +54,7 @@ class GoogleSheetsExporter
             ws.set_number,
             ws.weight,
             ws.reps,
-            workout.condition,
+            CONDITION_LABELS[workout.condition],
             workout.memo
           ]
         end
