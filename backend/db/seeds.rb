@@ -16,6 +16,12 @@ exercises = [
   { name: "プランク", category: "core" },
   { name: "クランチ", category: "core" },
   { name: "ランニング", category: "cardio" },
+  { name: "レッグカール", category: "legs" },
+  { name: "レッグエクステンション", category: "legs" },
+  { name: "シーテッドローイング", category: "back" },
+  { name: "チェストプレス", category: "chest" },
+  { name: "ヒップアブダクション", category: "legs" },
+  { name: "ヒップアダクション", category: "legs" },
 ]
 
 exercises.each do |attrs|
