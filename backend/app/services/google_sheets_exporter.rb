@@ -9,10 +9,10 @@ class GoogleSheetsExporter
     now = Date.today
     year_month = now.strftime("%Y-%m")
 
-    export_workouts(year_month)
+    workout_sheet_gid = export_workouts(year_month)
     export_body_records(year_month)
 
-    "https://docs.google.com/spreadsheets/d/#{@spreadsheet_id}"
+    "https://docs.google.com/spreadsheets/d/#{@spreadsheet_id}#gid=#{workout_sheet_gid}"
   end
 
   private
@@ -30,7 +30,7 @@ class GoogleSheetsExporter
 
   def export_workouts(year_month)
     sheet_name = "#{year_month}-ワークアウト"
-    ensure_sheet(sheet_name)
+    gid = ensure_sheet(sheet_name)
 
     start_of_month = Date.parse("#{year_month}-01")
     end_of_month = start_of_month.end_of_month
@@ -60,6 +60,7 @@ class GoogleSheetsExporter
     end
 
     write_sheet(sheet_name, rows)
+    gid
   end
 
   def export_body_records(year_month)
@@ -83,10 +84,11 @@ class GoogleSheetsExporter
 
   def ensure_sheet(sheet_name)
     spreadsheet = @service.get_spreadsheet(@spreadsheet_id)
-    existing = spreadsheet.sheets.map { |s| s.properties.title }
+    existing_sheet = spreadsheet.sheets.find { |s| s.properties.title == sheet_name }
 
-    if existing.include?(sheet_name)
+    if existing_sheet
       @service.clear_values(@spreadsheet_id, "#{sheet_name}!A:Z")
+      existing_sheet.properties.sheet_id
     else
       request = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new(
         requests: [
@@ -97,7 +99,8 @@ class GoogleSheetsExporter
           }
         ]
       )
-      @service.batch_update_spreadsheet(@spreadsheet_id, request)
+      response = @service.batch_update_spreadsheet(@spreadsheet_id, request)
+      response.replies.first.add_sheet.properties.sheet_id
     end
   end
 
