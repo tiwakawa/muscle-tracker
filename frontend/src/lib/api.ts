@@ -121,10 +121,10 @@ export const workoutsApi = {
     data: Partial<{
       date: string;
       condition: number;
-      memo: string;
-      start_time: string;
-      end_time: string;
-      gym_type: string;
+      memo: string | null;
+      start_time: string | null;
+      end_time: string | null;
+      gym_type: string | null;
     }>
   ) => request<Workout>("PUT", `/api/v1/workouts/${id}`, { workout: data }),
   delete: (id: number) => request<void>("DELETE", `/api/v1/workouts/${id}`),

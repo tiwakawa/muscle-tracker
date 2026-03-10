@@ -186,14 +186,16 @@ export default function EditWorkoutPage() {
     setSaving(true);
     try {
       // 1. Update workout
-      await workoutsApi.update(workoutId, {
+      const workoutPayload = {
         date,
         condition,
-        memo: memo || undefined,
-        start_time: startTime || undefined,
-        end_time: endTime || undefined,
-        gym_type: gymType || undefined,
-      });
+        memo: memo || null,
+        start_time: startTime || null,
+        end_time: endTime || null,
+        gym_type: gymType || null,
+      };
+      console.log("[handleSave] workout payload:", workoutPayload);
+      await workoutsApi.update(workoutId, workoutPayload);
 
       // 2. Delete removed exercise blocks (cascades to sets)
       const currentBlockDbIds = blocks.map((b) => b.dbId).filter(Boolean) as number[];

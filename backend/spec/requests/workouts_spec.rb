@@ -85,6 +85,32 @@ RSpec.describe "Workouts API", type: :request do
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["condition"]).to eq(5)
     end
+
+    it "sets start_time, end_time, gym_type from nil" do
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: { start_time: "09:00", end_time: "10:30", gym_type: "anytime" } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["start_time"]).to eq("09:00")
+      expect(body["end_time"]).to eq("10:30")
+      expect(body["gym_type"]).to eq("anytime")
+    end
+
+    it "clears start_time, end_time, gym_type when sent as null" do
+      workout.update!(start_time: "09:00", end_time: "10:30", gym_type: "anytime")
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: { start_time: nil, end_time: nil, gym_type: nil } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["start_time"]).to be_nil
+      expect(body["end_time"]).to be_nil
+      expect(body["gym_type"]).to be_nil
+    end
   end
 
   describe "DELETE /api/v1/workouts/:id" do
