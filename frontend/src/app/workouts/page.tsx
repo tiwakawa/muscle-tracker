@@ -15,6 +15,16 @@ const CONDITION_EMOJI: Record<number, string> = {
   5: "💪",
 };
 
+const GYM_TYPE_LABEL: Record<string, string> = {
+  anytime: "エニタイム",
+  personal: "パーソナル",
+};
+
+function formatTimeRange(startTime: string | null, endTime: string | null): string | null {
+  if (!startTime) return null;
+  return endTime ? `${startTime}〜${endTime}` : `${startTime}〜`;
+}
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}(${
@@ -68,9 +78,23 @@ export default function WorkoutsPage() {
             {workouts.map((w) => (
               <div key={w.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <span className="font-bold text-gray-800">{formatDate(w.date)}</span>
-                  <div className="flex items-center gap-3">
+                <div className="flex items-start justify-between px-4 pt-4 pb-2">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-gray-800">{formatDate(w.date)}</span>
+                      {formatTimeRange(w.start_time, w.end_time) && (
+                        <span className="text-xs text-gray-400">
+                          {formatTimeRange(w.start_time, w.end_time)}
+                        </span>
+                      )}
+                    </div>
+                    {w.gym_type && GYM_TYPE_LABEL[w.gym_type] && (
+                      <span className="text-xs text-indigo-400 font-medium">
+                        {GYM_TYPE_LABEL[w.gym_type]}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     {w.condition && (
                       <span className="text-xl">{CONDITION_EMOJI[w.condition]}</span>
                     )}
