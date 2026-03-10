@@ -83,7 +83,7 @@ export default function WorkoutsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-gray-800">{formatDate(w.date)}</span>
                       {formatTimeRange(w.start_time, w.end_time) && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-sm text-gray-400">
                           {formatTimeRange(w.start_time, w.end_time)}
                         </span>
                       )}
