@@ -15,6 +15,16 @@ const CONDITION_EMOJI: Record<number, string> = {
   5: "💪",
 };
 
+const GYM_TYPE_LABEL: Record<string, string> = {
+  anytime: "エニタイム",
+  personal: "パーソナル",
+};
+
+function formatTimeRange(startTime: string | null, endTime: string | null): string | null {
+  if (!startTime) return null;
+  return endTime ? `${startTime}〜${endTime}` : `${startTime}〜`;
+}
+
 function exerciseSummary(workout: Workout): string {
   if (!workout.workout_exercises?.length) return "セットなし";
   return workout.workout_exercises
@@ -165,12 +175,26 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {recentWorkouts.map((w) => (
                 <div key={w.id} className="bg-white rounded-2xl shadow-sm p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-gray-800 text-sm">
-                      {formatDate(w.date)}
-                    </span>
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="min-w-0 flex-1 mr-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-800 text-sm">
+                          {formatDate(w.date)}
+                        </span>
+                        {formatTimeRange(w.start_time, w.end_time) && (
+                          <span className="text-sm text-gray-400">
+                            {formatTimeRange(w.start_time, w.end_time)}
+                          </span>
+                        )}
+                      </div>
+                      {w.gym_type && GYM_TYPE_LABEL[w.gym_type] && (
+                        <span className="text-xs text-indigo-400 font-medium">
+                          {GYM_TYPE_LABEL[w.gym_type]}
+                        </span>
+                      )}
+                    </div>
                     {w.condition && (
-                      <span className="text-xl">{CONDITION_EMOJI[w.condition]}</span>
+                      <span className="text-xl flex-shrink-0">{CONDITION_EMOJI[w.condition]}</span>
                     )}
                   </div>
                   <p className="text-sm text-gray-500 line-clamp-1">
