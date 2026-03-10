@@ -1,6 +1,7 @@
 import type {
   AuthTokens,
   Exercise,
+  ExerciseNote,
   Workout,
   WorkoutExercise,
   WorkoutSet,
@@ -172,6 +173,16 @@ export const workoutSetsApi = {
       "DELETE",
       `/api/v1/workouts/${workoutId}/workout_exercises/${workoutExerciseId}/workout_sets/${id}`
     ),
+};
+
+// ---- Exercise Notes ----
+export const exerciseNotesApi = {
+  get: (exerciseId: number) =>
+    request<ExerciseNote>("GET", `/api/v1/exercise_notes/${exerciseId}`),
+  upsert: (exerciseId: number, note: string) =>
+    request<ExerciseNote>("PUT", `/api/v1/exercise_notes/${exerciseId}`, {
+      exercise_note: { note },
+    }),
 };
 
 // ---- Export ----

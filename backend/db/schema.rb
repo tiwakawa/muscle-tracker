@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_100001) do
     t.decimal "weight", precision: 5, scale: 2
     t.index ["user_id", "date"], name: "index_body_records_on_user_id_and_date"
     t.index ["user_id"], name: "index_body_records_on_user_id"
+  end
+
+  create_table "exercise_notes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "exercise_id", null: false
+    t.text "note"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["exercise_id"], name: "index_exercise_notes_on_exercise_id"
+    t.index ["user_id", "exercise_id"], name: "index_exercise_notes_on_user_id_and_exercise_id", unique: true
+    t.index ["user_id"], name: "index_exercise_notes_on_user_id"
   end
 
   create_table "exercises", force: :cascade do |t|
@@ -91,6 +102,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_100001) do
   end
 
   add_foreign_key "body_records", "users"
+  add_foreign_key "exercise_notes", "exercises"
+  add_foreign_key "exercise_notes", "users"
   add_foreign_key "workout_exercises", "exercises"
   add_foreign_key "workout_exercises", "workouts"
   add_foreign_key "workout_sets", "workout_exercises"

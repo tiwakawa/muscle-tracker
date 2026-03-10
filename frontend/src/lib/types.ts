@@ -54,6 +54,14 @@ export interface User {
   uid: string;
 }
 
+export interface ExerciseNote {
+  id: number | null;
+  exercise_id: number;
+  note: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface AuthTokens {
   "access-token": string;
   client: string;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
-import { exercisesApi, workoutsApi, workoutExercisesApi, workoutSetsApi } from "@/lib/api";
+import { exercisesApi, workoutsApi, workoutExercisesApi, workoutSetsApi, exerciseNotesApi } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
 
 const CONDITION_OPTIONS = [
@@ -41,6 +41,14 @@ interface ExerciseBlock {
   originalSetIds: number[];
 }
 
+interface NoteModal {
+  exerciseId: number;
+  exerciseName: string;
+  note: string;
+  loading: boolean;
+  saving: boolean;
+}
+
 function newSet(): SetDraft {
   return { id: crypto.randomUUID(), weight: "", reps: "" };
 }
@@ -59,6 +67,7 @@ export default function EditWorkoutPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
 
   useEffect(() => {
     Promise.all([exercisesApi.list(), workoutsApi.get(workoutId)])
@@ -138,6 +147,27 @@ export default function EditWorkoutPage() {
         b.id === blockId ? { ...b, sets: b.sets.filter((s) => s.id !== setId) } : b
       )
     );
+  };
+
+  const openNoteModal = async (exerciseId: number, exerciseName: string) => {
+    setNoteModal({ exerciseId, exerciseName, note: "", loading: true, saving: false });
+    try {
+      const data = await exerciseNotesApi.get(exerciseId);
+      setNoteModal((prev) => prev && { ...prev, note: data.note ?? "", loading: false });
+    } catch {
+      setNoteModal((prev) => prev && { ...prev, loading: false });
+    }
+  };
+
+  const saveNote = async () => {
+    if (!noteModal) return;
+    setNoteModal((prev) => prev && { ...prev, saving: true });
+    try {
+      await exerciseNotesApi.upsert(noteModal.exerciseId, noteModal.note);
+      setNoteModal(null);
+    } catch {
+      setNoteModal((prev) => prev && { ...prev, saving: false });
+    }
   };
 
   const handleSave = async () => {
@@ -278,101 +308,113 @@ export default function EditWorkoutPage() {
         </div>
 
         {/* Exercise blocks */}
-        {blocks.map((block, blockIndex) => (
-          <div
-            key={block.id}
-            className={`rounded-2xl shadow-sm overflow-hidden ${
-              block.dbId ? "bg-indigo-50" : "bg-white"
-            }`}
-          >
-            {/* Block header */}
-            <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
-              <span className="text-xs text-gray-400 font-medium w-5 text-center">
-                {blockIndex + 1}
-              </span>
-              <select
-                value={block.exerciseId}
-                onChange={(e) => updateBlock(block.id, "exerciseId", e.target.value)}
-                className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              >
-                {Object.entries(grouped).map(([cat, exs]) => (
-                  <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
-                    {exs.map((ex) => (
-                      <option key={ex.id} value={ex.id}>
-                        {ex.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <button
-                onClick={() => removeBlock(block.id)}
-                className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="px-4 py-3 space-y-3">
-              {/* Exercise memo */}
-              <input
-                type="text"
-                value={block.memo}
-                onChange={(e) => updateBlock(block.id, "memo", e.target.value)}
-                placeholder="種目メモ（任意）"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-
-              {/* Sets */}
-              <div className="space-y-2">
-                {block.sets.map((s, setIndex) => (
-                  <div key={s.id} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400 w-8 text-center font-medium flex-shrink-0">
-                      {setIndex + 1}セット
-                    </span>
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        value={s.weight}
-                        onChange={(e) => updateSet(block.id, s.id, "weight", e.target.value)}
-                        placeholder="重量"
-                        min={0}
-                        step={0.5}
-                        className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      />
-                      <span className="absolute right-2 top-2.5 text-xs text-gray-400">kg</span>
-                    </div>
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        value={s.reps}
-                        onChange={(e) => updateSet(block.id, s.id, "reps", e.target.value)}
-                        placeholder="回数"
-                        min={1}
-                        className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                      />
-                      <span className="absolute right-2 top-2.5 text-xs text-gray-400">回</span>
-                    </div>
-                    <button
-                      onClick={() => removeSet(block.id, s.id)}
-                      className="text-gray-300 hover:text-red-400 text-lg leading-none transition-colors flex-shrink-0"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+        {blocks.map((block, blockIndex) => {
+          const exercise = exercises.find((e) => e.id.toString() === block.exerciseId);
+          return (
+            <div
+              key={block.id}
+              className={`rounded-2xl shadow-sm overflow-hidden ${
+                block.dbId ? "bg-indigo-50" : "bg-white"
+              }`}
+            >
+              {/* Block header */}
+              <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
+                <span className="text-xs text-gray-400 font-medium w-5 text-center">
+                  {blockIndex + 1}
+                </span>
+                <select
+                  value={block.exerciseId}
+                  onChange={(e) => updateBlock(block.id, "exerciseId", e.target.value)}
+                  className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  {Object.entries(grouped).map(([cat, exs]) => (
+                    <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
+                      {exs.map((ex) => (
+                        <option key={ex.id} value={ex.id}>
+                          {ex.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <button
+                  onClick={() =>
+                    exercise && openNoteModal(exercise.id, exercise.name)
+                  }
+                  title="種目メモを編集"
+                  className="text-lg leading-none text-gray-400 hover:text-indigo-500 transition-colors flex-shrink-0"
+                >
+                  📝
+                </button>
+                <button
+                  onClick={() => removeBlock(block.id)}
+                  className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
+                >
+                  ×
+                </button>
               </div>
 
-              {/* Add set */}
-              <button
-                onClick={() => addSetToBlock(block.id)}
-                className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-xs text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-              >
-                + セットを追加
-              </button>
+              <div className="px-4 py-3 space-y-3">
+                {/* Exercise memo */}
+                <input
+                  type="text"
+                  value={block.memo}
+                  onChange={(e) => updateBlock(block.id, "memo", e.target.value)}
+                  placeholder="このセッションのメモ（任意）"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+
+                {/* Sets */}
+                <div className="space-y-2">
+                  {block.sets.map((s, setIndex) => (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 w-8 text-center font-medium flex-shrink-0">
+                        {setIndex + 1}セット
+                      </span>
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          value={s.weight}
+                          onChange={(e) => updateSet(block.id, s.id, "weight", e.target.value)}
+                          placeholder="重量"
+                          min={0}
+                          step={0.5}
+                          className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-gray-400">kg</span>
+                      </div>
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          value={s.reps}
+                          onChange={(e) => updateSet(block.id, s.id, "reps", e.target.value)}
+                          placeholder="回数"
+                          min={1}
+                          className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        />
+                        <span className="absolute right-2 top-2.5 text-xs text-gray-400">回</span>
+                      </div>
+                      <button
+                        onClick={() => removeSet(block.id, s.id)}
+                        className="text-gray-300 hover:text-red-400 text-lg leading-none transition-colors flex-shrink-0"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add set */}
+                <button
+                  onClick={() => addSetToBlock(block.id)}
+                  className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-xs text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+                >
+                  + セットを追加
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Add exercise block */}
         <button
@@ -402,6 +444,58 @@ export default function EditWorkoutPage() {
           キャンセル
         </button>
       </div>
+
+      {/* Note modal */}
+      {noteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">
+                📝 {noteModal.exerciseName}
+              </h3>
+              <button
+                onClick={() => setNoteModal(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            {noteModal.loading ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin h-6 w-6 border-4 border-indigo-600 border-t-transparent rounded-full" />
+              </div>
+            ) : (
+              <textarea
+                value={noteModal.note}
+                onChange={(e) =>
+                  setNoteModal((prev) => prev && { ...prev, note: e.target.value })
+                }
+                placeholder="この種目に関するメモ（フォームのコツ、重量の目標など）"
+                rows={5}
+                autoFocus
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setNoteModal(null)}
+                className="flex-1 py-3 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={saveNote}
+                disabled={noteModal.loading || noteModal.saving}
+                className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {noteModal.saving ? "保存中..." : "保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedPage>
   );
 }
