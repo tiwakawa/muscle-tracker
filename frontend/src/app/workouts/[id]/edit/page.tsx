@@ -14,6 +14,11 @@ const CONDITION_OPTIONS = [
   { value: 5, emoji: "💪", label: "最高" },
 ];
 
+const GYM_TYPE_OPTIONS = [
+  { value: "anytime", label: "Anytime" },
+  { value: "personal", label: "自宅/パーソナル" },
+];
+
 const CATEGORY_JP: Record<string, string> = {
   chest: "胸",
   back: "背中",
@@ -61,6 +66,9 @@ export default function EditWorkoutPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [date, setDate] = useState("");
   const [condition, setCondition] = useState<number>(3);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [gymType, setGymType] = useState("");
   const [memo, setMemo] = useState("");
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
   const [originalBlockIds, setOriginalBlockIds] = useState<number[]>([]);
@@ -75,6 +83,9 @@ export default function EditWorkoutPage() {
         setExercises(exs);
         setDate(workout.date);
         setCondition(workout.condition ?? 3);
+        setStartTime(workout.start_time ?? "");
+        setEndTime(workout.end_time ?? "");
+        setGymType(workout.gym_type ?? "");
         setMemo(workout.memo ?? "");
 
         const loadedBlocks: ExerciseBlock[] = (workout.workout_exercises ?? []).map((we) => ({
@@ -175,7 +186,14 @@ export default function EditWorkoutPage() {
     setSaving(true);
     try {
       // 1. Update workout
-      await workoutsApi.update(workoutId, { date, condition, memo: memo || undefined });
+      await workoutsApi.update(workoutId, {
+        date,
+        condition,
+        memo: memo || undefined,
+        start_time: startTime || undefined,
+        end_time: endTime || undefined,
+        gym_type: gymType || undefined,
+      });
 
       // 2. Delete removed exercise blocks (cascades to sets)
       const currentBlockDbIds = blocks.map((b) => b.dbId).filter(Boolean) as number[];
@@ -288,6 +306,51 @@ export default function EditWorkoutPage() {
               >
                 <span className="text-2xl">{opt.emoji}</span>
                 <span className="text-[10px] text-gray-500 mt-0.5">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Time */}
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <p className="text-sm font-medium text-gray-600 mb-3">時間（任意）</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">開始</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">終了</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Gym type */}
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <p className="text-sm font-medium text-gray-600 mb-3">ジムタイプ（任意）</p>
+          <div className="grid grid-cols-2 gap-2">
+            {GYM_TYPE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setGymType(gymType === opt.value ? "" : opt.value)}
+                className={`py-2 rounded-xl border-2 text-sm transition-all ${
+                  gymType === opt.value
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-medium"
+                    : "border-gray-100 bg-gray-50 text-gray-600"
+                }`}
+              >
+                {opt.label}
               </button>
             ))}
           </div>

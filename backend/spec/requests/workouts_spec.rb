@@ -34,6 +34,18 @@ RSpec.describe "Workouts API", type: :request do
       expect(body["condition"]).to eq(4)
     end
 
+    it "creates a workout with start_time, end_time, and gym_type" do
+      post "/api/v1/workouts",
+        params: { workout: { date: "2026-03-01", start_time: "09:00", end_time: "10:30", gym_type: "anytime" } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["start_time"]).to eq("09:00")
+      expect(body["end_time"]).to eq("10:30")
+      expect(body["gym_type"]).to eq("anytime")
+    end
+
     it "returns 422 when date is missing" do
       post "/api/v1/workouts",
         params: { workout: { condition: 3 } }.to_json,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_300000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -94,7 +94,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_200000) do
     t.integer "condition"
     t.datetime "created_at", null: false
     t.date "date", null: false
+    t.time "end_time"
+    t.string "gym_type"
     t.text "memo"
+    t.time "start_time"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id", "date"], name: "index_workouts_on_user_id_and_date"

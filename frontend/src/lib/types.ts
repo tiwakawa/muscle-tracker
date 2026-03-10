@@ -32,6 +32,9 @@ export interface Workout {
   date: string;
   condition: number | null;
   memo: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  gym_type: string | null;
   created_at: string;
   updated_at: string;
   workout_exercises?: WorkoutExercise[];

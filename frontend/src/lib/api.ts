@@ -108,11 +108,24 @@ export const exercisesApi = {
 export const workoutsApi = {
   list: () => request<Workout[]>("GET", "/api/v1/workouts"),
   get: (id: number) => request<Workout>("GET", `/api/v1/workouts/${id}`),
-  create: (data: { date: string; condition?: number; memo?: string }) =>
-    request<Workout>("POST", "/api/v1/workouts", { workout: data }),
+  create: (data: {
+    date: string;
+    condition?: number;
+    memo?: string;
+    start_time?: string;
+    end_time?: string;
+    gym_type?: string;
+  }) => request<Workout>("POST", "/api/v1/workouts", { workout: data }),
   update: (
     id: number,
-    data: Partial<{ date: string; condition: number; memo: string }>
+    data: Partial<{
+      date: string;
+      condition: number;
+      memo: string;
+      start_time: string;
+      end_time: string;
+      gym_type: string;
+    }>
   ) => request<Workout>("PUT", `/api/v1/workouts/${id}`, { workout: data }),
   delete: (id: number) => request<void>("DELETE", `/api/v1/workouts/${id}`),
 };
