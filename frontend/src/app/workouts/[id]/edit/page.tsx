@@ -164,7 +164,7 @@ export default function EditWorkoutPage() {
           // Update existing workout_exercise
           await workoutExercisesApi.update(workoutId, block.dbId, {
             order: i + 1,
-            memo: block.memo || undefined,
+            memo: block.memo,
           });
           weId = block.dbId;
 
@@ -195,7 +195,7 @@ export default function EditWorkoutPage() {
           const we = await workoutExercisesApi.create(workoutId, {
             exercise_id: parseInt(block.exerciseId),
             order: i + 1,
-            memo: block.memo || undefined,
+            memo: block.memo,
           });
           weId = we.id;
 

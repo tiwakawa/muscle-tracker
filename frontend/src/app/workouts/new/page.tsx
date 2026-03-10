@@ -128,7 +128,7 @@ export default function NewWorkoutPage() {
         const we = await workoutExercisesApi.create(workout.id, {
           exercise_id: parseInt(block.exerciseId),
           order: i + 1,
-          memo: block.memo || undefined,
+          memo: block.memo,
         });
 
         for (let j = 0; j < block.sets.length; j++) {

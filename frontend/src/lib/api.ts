@@ -120,7 +120,7 @@ export const workoutsApi = {
 export const workoutExercisesApi = {
   create: (
     workoutId: number,
-    data: { exercise_id: number; order: number; memo?: string }
+    data: { exercise_id: number; order: number; memo?: string | null }
   ) =>
     request<WorkoutExercise>(
       "POST",
@@ -130,7 +130,7 @@ export const workoutExercisesApi = {
   update: (
     workoutId: number,
     id: number,
-    data: Partial<{ exercise_id: number; order: number; memo: string }>
+    data: Partial<{ exercise_id: number; order: number; memo: string | null }>
   ) =>
     request<WorkoutExercise>(
       "PUT",
