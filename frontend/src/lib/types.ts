@@ -7,13 +7,23 @@ export interface Exercise {
 
 export interface WorkoutSet {
   id: number;
-  workout_id: number;
-  exercise_id: number;
+  workout_exercise_id: number;
   set_number: number;
   weight: string | null;
   reps: number | null;
   created_at: string;
+}
+
+export interface WorkoutExercise {
+  id: number;
+  workout_id: number;
+  exercise_id: number;
+  order: number;
+  memo: string | null;
+  created_at: string;
+  updated_at: string;
   exercise?: Exercise;
+  workout_sets?: WorkoutSet[];
 }
 
 export interface Workout {
@@ -24,7 +34,7 @@ export interface Workout {
   memo: string | null;
   created_at: string;
   updated_at: string;
-  workout_sets?: WorkoutSet[];
+  workout_exercises?: WorkoutExercise[];
 }
 
 export interface BodyRecord {

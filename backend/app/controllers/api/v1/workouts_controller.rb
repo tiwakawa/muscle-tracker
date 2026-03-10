@@ -5,14 +5,20 @@ module Api
 
       def index
         workouts = current_user.workouts
-                               .includes(workout_sets: :exercise)
+                               .includes(workout_exercises: [:exercise, :workout_sets])
                                .order(date: :desc)
-        render json: workouts.as_json(include: { workout_sets: { include: :exercise } })
+        render json: workouts.as_json(include: {
+          workout_exercises: {
+            include: { exercise: {}, workout_sets: {} }
+          }
+        })
       end
 
       def show
         render json: @workout.as_json(include: {
-          workout_sets: { include: :exercise }
+          workout_exercises: {
+            include: { exercise: {}, workout_sets: {} }
+          }
         })
       end
 

@@ -1,18 +1,13 @@
 module Api
   module V1
     class WorkoutSetsController < BaseController
-      before_action :set_workout
+      before_action :set_workout_exercise
       before_action :set_workout_set, only: [:update, :destroy]
 
-      def index
-        sets = @workout.workout_sets.includes(:exercise).order(:set_number)
-        render json: sets.as_json(include: :exercise)
-      end
-
       def create
-        workout_set = @workout.workout_sets.new(workout_set_params)
+        workout_set = @workout_exercise.workout_sets.new(workout_set_params)
         if workout_set.save
-          render json: workout_set.as_json(include: :exercise), status: :created
+          render json: workout_set, status: :created
         else
           render json: { errors: workout_set.errors.full_messages }, status: :unprocessable_entity
         end
@@ -20,7 +15,7 @@ module Api
 
       def update
         if @workout_set.update(workout_set_params)
-          render json: @workout_set.as_json(include: :exercise)
+          render json: @workout_set
         else
           render json: { errors: @workout_set.errors.full_messages }, status: :unprocessable_entity
         end
@@ -33,16 +28,17 @@ module Api
 
       private
 
-      def set_workout
-        @workout = current_user.workouts.find(params[:workout_id])
+      def set_workout_exercise
+        workout = current_user.workouts.find(params[:workout_id])
+        @workout_exercise = workout.workout_exercises.find(params[:workout_exercise_id])
       end
 
       def set_workout_set
-        @workout_set = @workout.workout_sets.find(params[:id])
+        @workout_set = @workout_exercise.workout_sets.find(params[:id])
       end
 
       def workout_set_params
-        params.require(:workout_set).permit(:exercise_id, :set_number, :weight, :reps)
+        params.require(:workout_set).permit(:set_number, :weight, :reps)
       end
     end
   end

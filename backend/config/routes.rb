@@ -6,7 +6,9 @@ Rails.application.routes.draw do
       get "me", to: "me#show"
       resources :exercises
       resources :workouts do
-        resources :workout_sets, only: [:index, :create, :update, :destroy]
+        resources :workout_exercises, only: [:create, :update, :destroy] do
+          resources :workout_sets, only: [:create, :update, :destroy]
+        end
       end
       resources :body_records
       post "export", to: "exports#create"

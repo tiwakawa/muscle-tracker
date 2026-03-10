@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_10_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,14 +57,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
-  create_table "workout_sets", force: :cascade do |t|
+  create_table "workout_exercises", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "exercise_id", null: false
+    t.text "memo"
+    t.integer "order", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workout_id", null: false
+    t.index ["exercise_id"], name: "index_workout_exercises_on_exercise_id"
+    t.index ["workout_id"], name: "index_workout_exercises_on_workout_id"
+  end
+
+  create_table "workout_sets", force: :cascade do |t|
+    t.datetime "created_at", null: false
     t.integer "reps"
     t.integer "set_number", null: false
     t.decimal "weight", precision: 5, scale: 2
+    t.bigint "workout_exercise_id", null: false
     t.bigint "workout_id", null: false
-    t.index ["exercise_id"], name: "index_workout_sets_on_exercise_id"
+    t.index ["workout_exercise_id"], name: "index_workout_sets_on_workout_exercise_id"
     t.index ["workout_id"], name: "index_workout_sets_on_workout_id"
   end
 
@@ -80,7 +91,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_072634) do
   end
 
   add_foreign_key "body_records", "users"
-  add_foreign_key "workout_sets", "exercises"
+  add_foreign_key "workout_exercises", "exercises"
+  add_foreign_key "workout_exercises", "workouts"
+  add_foreign_key "workout_sets", "workout_exercises"
   add_foreign_key "workout_sets", "workouts"
   add_foreign_key "workouts", "users"
 end

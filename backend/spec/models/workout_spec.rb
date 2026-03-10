@@ -39,6 +39,7 @@ RSpec.describe Workout, type: :model do
 
   describe "associations" do
     it { is_expected.to belong_to(:user) }
-    it { is_expected.to have_many(:workout_sets).dependent(:destroy) }
+    it { is_expected.to have_many(:workout_exercises).dependent(:destroy) }
+    it { is_expected.to have_many(:workout_sets).through(:workout_exercises) }
   end
 end

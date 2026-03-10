@@ -2,6 +2,7 @@ import type {
   AuthTokens,
   Exercise,
   Workout,
+  WorkoutExercise,
   WorkoutSet,
   BodyRecord,
 } from "./types";
@@ -115,41 +116,61 @@ export const workoutsApi = {
   delete: (id: number) => request<void>("DELETE", `/api/v1/workouts/${id}`),
 };
 
-// ---- Workout Sets ----
-export const workoutSetsApi = {
+// ---- Workout Exercises ----
+export const workoutExercisesApi = {
   create: (
     workoutId: number,
-    data: {
-      exercise_id: number;
-      set_number: number;
-      weight?: number;
-      reps?: number;
-    }
+    data: { exercise_id: number; order: number; memo?: string }
   ) =>
-    request<WorkoutSet>(
+    request<WorkoutExercise>(
       "POST",
-      `/api/v1/workouts/${workoutId}/workout_sets`,
-      { workout_set: data }
+      `/api/v1/workouts/${workoutId}/workout_exercises`,
+      { workout_exercise: data }
     ),
   update: (
     workoutId: number,
     id: number,
-    data: {
-      exercise_id: number;
-      set_number: number;
-      weight?: number;
-      reps?: number;
-    }
+    data: Partial<{ exercise_id: number; order: number; memo: string }>
   ) =>
-    request<WorkoutSet>(
+    request<WorkoutExercise>(
       "PUT",
-      `/api/v1/workouts/${workoutId}/workout_sets/${id}`,
-      { workout_set: data }
+      `/api/v1/workouts/${workoutId}/workout_exercises/${id}`,
+      { workout_exercise: data }
     ),
   delete: (workoutId: number, id: number) =>
     request<void>(
       "DELETE",
-      `/api/v1/workouts/${workoutId}/workout_sets/${id}`
+      `/api/v1/workouts/${workoutId}/workout_exercises/${id}`
+    ),
+};
+
+// ---- Workout Sets ----
+export const workoutSetsApi = {
+  create: (
+    workoutId: number,
+    workoutExerciseId: number,
+    data: { set_number: number; weight?: number; reps?: number }
+  ) =>
+    request<WorkoutSet>(
+      "POST",
+      `/api/v1/workouts/${workoutId}/workout_exercises/${workoutExerciseId}/workout_sets`,
+      { workout_set: data }
+    ),
+  update: (
+    workoutId: number,
+    workoutExerciseId: number,
+    id: number,
+    data: { set_number: number; weight?: number; reps?: number }
+  ) =>
+    request<WorkoutSet>(
+      "PUT",
+      `/api/v1/workouts/${workoutId}/workout_exercises/${workoutExerciseId}/workout_sets/${id}`,
+      { workout_set: data }
+    ),
+  delete: (workoutId: number, workoutExerciseId: number, id: number) =>
+    request<void>(
+      "DELETE",
+      `/api/v1/workouts/${workoutId}/workout_exercises/${workoutExerciseId}/workout_sets/${id}`
     ),
 };
 

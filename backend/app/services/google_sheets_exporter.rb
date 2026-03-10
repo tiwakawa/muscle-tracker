@@ -38,25 +38,27 @@ class GoogleSheetsExporter
     end_of_month = start_of_month.end_of_month
 
     workouts = @user.workouts
-      .includes(workout_sets: :exercise)
+      .includes(workout_exercises: [:exercise, :workout_sets])
       .where(date: start_of_month..end_of_month)
       .order(:date)
 
     rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "コンディション", "メモ"]]
     workouts.each do |workout|
-      if workout.workout_sets.empty?
+      if workout.workout_exercises.empty?
         rows << [workout.date.to_s, "", "", "", "", CONDITION_LABELS[workout.condition], workout.memo]
       else
-        workout.workout_sets.each do |ws|
-          rows << [
-            workout.date.to_s,
-            ws.exercise&.name,
-            ws.set_number,
-            ws.weight,
-            ws.reps,
-            CONDITION_LABELS[workout.condition],
-            workout.memo
-          ]
+        workout.workout_exercises.order(:order).each do |we|
+          we.workout_sets.order(:set_number).each do |ws|
+            rows << [
+              workout.date.to_s,
+              we.exercise&.name,
+              ws.set_number,
+              ws.weight,
+              ws.reps,
+              CONDITION_LABELS[workout.condition],
+              workout.memo
+            ]
+          end
         end
       end
     end

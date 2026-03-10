@@ -89,30 +89,21 @@ export default function WorkoutsPage() {
                   </div>
                 </div>
 
-                {/* Sets */}
-                {w.workout_sets && w.workout_sets.length > 0 ? (
+                {/* Exercises */}
+                {w.workout_exercises && w.workout_exercises.length > 0 ? (
                   <div className="px-4 pb-3 space-y-1">
-                    {(() => {
-                      // Group by exercise
-                      const groups: Record<string, { name: string; sets: typeof w.workout_sets }> = {};
-                      for (const s of w.workout_sets!) {
-                        const name = s.exercise?.name ?? "不明";
-                        if (!groups[name]) groups[name] = { name, sets: [] };
-                        groups[name].sets!.push(s);
-                      }
-                      return Object.values(groups).map((g) => (
-                        <div key={g.name} className="text-sm">
-                          <span className="font-medium text-gray-700">{g.name}</span>
-                          <span className="text-gray-400 ml-2">
-                            {g.sets!.map((s) =>
-                              [s.weight ? `${s.weight}kg` : null, s.reps ? `${s.reps}回` : null]
-                                .filter(Boolean)
-                                .join("×")
-                            ).join(" / ")}
-                          </span>
-                        </div>
-                      ));
-                    })()}
+                    {w.workout_exercises.map((we) => (
+                      <div key={we.id} className="text-sm">
+                        <span className="font-medium text-gray-700">{we.exercise?.name ?? "不明"}</span>
+                        <span className="text-gray-400 ml-2">
+                          {we.workout_sets?.map((ws) =>
+                            [ws.weight ? `${ws.weight}kg` : null, ws.reps ? `${ws.reps}回` : null]
+                              .filter(Boolean)
+                              .join("×")
+                          ).join(" / ")}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <p className="px-4 pb-3 text-sm text-gray-400">セットなし</p>
