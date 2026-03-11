@@ -30,6 +30,7 @@ jobs:
           --health-retries=5
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       RAILS_ENV: test
       DATABASE_USER: postgres
       DATABASE_PASSWORD: password
