@@ -1,4 +1,11 @@
 class GoogleSheetsExporter
+  SHEET_NAMES = {
+    ai: "AI用",
+    summary: "サマリー",
+    detail: "詳細",
+    exercise_notes: "種目メモ"
+  }.freeze
+
   def initialize(user)
     @user = user
     @spreadsheet_id = ENV.fetch("GOOGLE_SPREADSHEET_ID")
@@ -6,13 +13,21 @@ class GoogleSheetsExporter
   end
 
   def export_current_month
-    now = Date.today
-    year_month = now.strftime("%Y-%m")
+    workouts = @user.workouts
+      .includes(workout_exercises: [:exercise, :workout_sets])
+      .order(:date)
 
-    workout_sheet_gid = export_workouts(year_month)
-    export_body_records(year_month)
+    exercise_notes = @user.exercise_notes.includes(:exercise)
+    notes_by_exercise = exercise_notes.each_with_object({}) { |en, h| h[en.exercise_id] = en.note }
 
-    "https://docs.google.com/spreadsheets/d/#{@spreadsheet_id}#gid=#{workout_sheet_gid}"
+    SHEET_NAMES.each_value { |name| ensure_sheet(name) }
+
+    write_sheet(SHEET_NAMES[:ai], build_ai_rows(workouts, notes_by_exercise))
+    write_sheet(SHEET_NAMES[:summary], build_summary_rows(workouts))
+    write_sheet(SHEET_NAMES[:detail], build_detail_rows(workouts, notes_by_exercise))
+    write_sheet(SHEET_NAMES[:exercise_notes], build_exercise_notes_rows(exercise_notes))
+
+    "https://docs.google.com/spreadsheets/d/#{@spreadsheet_id}"
   end
 
   private
@@ -29,61 +44,84 @@ class GoogleSheetsExporter
   end
 
   CONDITION_LABELS = { 1 => "最悪", 2 => "悪い", 3 => "普通", 4 => "良い", 5 => "最高" }.freeze
+  GYM_TYPE_LABELS = { "anytime" => "エニタイム", "personal" => "パーソナル" }.freeze
 
-  def export_workouts(year_month)
-    sheet_name = "#{year_month}-ワークアウト"
-    gid = ensure_sheet(sheet_name)
+  def format_time(t)
+    t&.strftime("%H:%M")
+  end
 
-    start_of_month = Date.parse("#{year_month}-01")
-    end_of_month = start_of_month.end_of_month
+  def format_condition(c)
+    CONDITION_LABELS[c]
+  end
 
-    workouts = @user.workouts
-      .includes(workout_exercises: [:exercise, :workout_sets])
-      .where(date: start_of_month..end_of_month)
-      .order(:date)
+  def format_gym_type(g)
+    GYM_TYPE_LABELS[g]
+  end
 
-    rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "コンディション", "メモ"]]
+  def build_ai_rows(workouts, notes_by_exercise)
+    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "全体メモ", "種目", "セット番号", "重量(kg)", "回数", "種目メモ"]]
     workouts.each do |workout|
+      base = [
+        workout.date.to_s,
+        format_time(workout.start_time),
+        format_time(workout.end_time),
+        format_gym_type(workout.gym_type),
+        format_condition(workout.condition),
+        workout.memo
+      ]
       if workout.workout_exercises.empty?
-        rows << [workout.date.to_s, "", "", "", "", CONDITION_LABELS[workout.condition], workout.memo]
+        rows << base + ["", "", "", "", ""]
       else
         workout.workout_exercises.order(:order).each do |we|
           we.workout_sets.order(:set_number).each do |ws|
-            rows << [
-              workout.date.to_s,
-              we.exercise&.name,
-              ws.set_number,
-              ws.weight,
-              ws.reps,
-              CONDITION_LABELS[workout.condition],
-              workout.memo
-            ]
+            rows << base + [we.exercise&.name, ws.set_number, ws.weight, ws.reps, notes_by_exercise[we.exercise_id]]
           end
         end
       end
     end
-
-    write_sheet(sheet_name, rows)
-    gid
+    rows
   end
 
-  def export_body_records(year_month)
-    sheet_name = "#{year_month}-ボディ"
-    ensure_sheet(sheet_name)
-
-    start_of_month = Date.parse("#{year_month}-01")
-    end_of_month = start_of_month.end_of_month
-
-    records = @user.body_records
-      .where(date: start_of_month..end_of_month)
-      .order(:date)
-
-    rows = [["日付", "体重(kg)", "体脂肪率(%)"]]
-    records.each do |r|
-      rows << [r.date.to_s, r.weight, r.body_fat_percentage]
+  def build_summary_rows(workouts)
+    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "全体メモ"]]
+    workouts.each do |workout|
+      rows << [
+        workout.date.to_s,
+        format_time(workout.start_time),
+        format_time(workout.end_time),
+        format_gym_type(workout.gym_type),
+        format_condition(workout.condition),
+        workout.memo
+      ]
     end
+    rows
+  end
 
-    write_sheet(sheet_name, rows)
+  def build_detail_rows(workouts, notes_by_exercise)
+    rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "種目メモ"]]
+    workouts.each do |workout|
+      workout.workout_exercises.order(:order).each do |we|
+        we.workout_sets.order(:set_number).each do |ws|
+          rows << [
+            workout.date.to_s,
+            we.exercise&.name,
+            ws.set_number,
+            ws.weight,
+            ws.reps,
+            notes_by_exercise[we.exercise_id]
+          ]
+        end
+      end
+    end
+    rows
+  end
+
+  def build_exercise_notes_rows(exercise_notes)
+    rows = [["種目名", "メモ"]]
+    exercise_notes.sort_by { |en| en.exercise&.name.to_s }.each do |en|
+      rows << [en.exercise&.name, en.note]
+    end
+    rows
   end
 
   def ensure_sheet(sheet_name)
