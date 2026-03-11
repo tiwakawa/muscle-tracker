@@ -18,13 +18,12 @@ class GoogleSheetsExporter
       .order(:date)
 
     exercise_notes = @user.exercise_notes.includes(:exercise)
-    notes_by_exercise = exercise_notes.each_with_object({}) { |en, h| h[en.exercise_id] = en.note }
 
     SHEET_NAMES.each_value { |name| ensure_sheet(name) }
 
-    write_sheet(SHEET_NAMES[:ai], build_ai_rows(workouts, notes_by_exercise))
+    write_sheet(SHEET_NAMES[:ai], build_ai_rows(workouts))
     write_sheet(SHEET_NAMES[:summary], build_summary_rows(workouts))
-    write_sheet(SHEET_NAMES[:detail], build_detail_rows(workouts, notes_by_exercise))
+    write_sheet(SHEET_NAMES[:detail], build_detail_rows(workouts))
     write_sheet(SHEET_NAMES[:exercise_notes], build_exercise_notes_rows(exercise_notes))
 
     "https://docs.google.com/spreadsheets/d/#{@spreadsheet_id}"
@@ -58,8 +57,8 @@ class GoogleSheetsExporter
     GYM_TYPE_LABELS[g]
   end
 
-  def build_ai_rows(workouts, notes_by_exercise)
-    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "全体メモ", "種目", "セット番号", "重量(kg)", "回数", "種目メモ"]]
+  def build_ai_rows(workouts)
+    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "ワークアウトメモ", "種目", "セット番号", "重量(kg)", "回数", "当日メモ"]]
     workouts.each do |workout|
       base = [
         workout.date.to_s,
@@ -74,7 +73,7 @@ class GoogleSheetsExporter
       else
         workout.workout_exercises.order(:order).each do |we|
           we.workout_sets.order(:set_number).each do |ws|
-            rows << base + [we.exercise&.name, ws.set_number, ws.weight, ws.reps, notes_by_exercise[we.exercise_id]]
+            rows << base + [we.exercise&.name, ws.set_number, ws.weight, ws.reps, we.memo]
           end
         end
       end
@@ -83,7 +82,7 @@ class GoogleSheetsExporter
   end
 
   def build_summary_rows(workouts)
-    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "全体メモ"]]
+    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "ワークアウトメモ"]]
     workouts.each do |workout|
       rows << [
         workout.date.to_s,
@@ -97,8 +96,8 @@ class GoogleSheetsExporter
     rows
   end
 
-  def build_detail_rows(workouts, notes_by_exercise)
-    rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "種目メモ"]]
+  def build_detail_rows(workouts)
+    rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "当日メモ"]]
     workouts.each do |workout|
       workout.workout_exercises.order(:order).each do |we|
         we.workout_sets.order(:set_number).each do |ws|
@@ -108,7 +107,7 @@ class GoogleSheetsExporter
             ws.set_number,
             ws.weight,
             ws.reps,
-            notes_by_exercise[we.exercise_id]
+            we.memo
           ]
         end
       end
