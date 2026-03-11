@@ -16,7 +16,7 @@ jobs:
     env:
       RAILS_ENV: production
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
       GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
       GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
 
