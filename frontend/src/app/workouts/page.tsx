@@ -159,7 +159,7 @@ export default function WorkoutsPage() {
                       onClick={() => handleAiCopy(w)}
                       className="text-xs text-purple-500 hover:text-purple-700 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-purple-50"
                     >
-                      AIに聞く
+                      AI用にコピー
                     </button>
                     <button
                       onClick={() => router.push(`/workouts/${w.id}/edit`)}
