@@ -15,8 +15,8 @@ const CONDITION_OPTIONS = [
 ];
 
 const GYM_TYPE_OPTIONS = [
-  { value: "anytime", label: "Anytime" },
-  { value: "personal", label: "自宅/パーソナル" },
+  { value: "anytime", label: "エニタイム" },
+  { value: "personal", label: "パーソナル" },
 ];
 
 const CATEGORY_JP: Record<string, string> = {
@@ -361,7 +361,7 @@ export default function EditWorkoutPage() {
         {/* Workout memo */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <label className="block text-sm font-medium text-gray-600 mb-2">
-            メモ（任意）
+            ワークアウトメモ（任意）
           </label>
           <textarea
             value={memo}
