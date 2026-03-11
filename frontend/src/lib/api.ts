@@ -200,7 +200,7 @@ export const exerciseNotesApi = {
 
 // ---- Export ----
 export const exportApi = {
-  exportCurrentMonth: () =>
+  exportAll: () =>
     request<{ url: string }>("POST", "/api/v1/export"),
 };
 

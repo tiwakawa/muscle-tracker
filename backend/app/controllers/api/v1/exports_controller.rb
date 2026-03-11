@@ -3,7 +3,7 @@ module Api
     class ExportsController < BaseController
       def create
         exporter = GoogleSheetsExporter.new(current_user)
-        url = exporter.export_current_month
+        url = exporter.export_all
         render json: { url: url }
       rescue => e
         render json: { error: e.message }, status: :unprocessable_entity

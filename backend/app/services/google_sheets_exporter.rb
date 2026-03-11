@@ -12,7 +12,7 @@ class GoogleSheetsExporter
     @service = build_service
   end
 
-  def export_current_month
+  def export_all
     workouts = @user.workouts
       .includes(workout_exercises: [:exercise, :workout_sets])
       .order(:date)

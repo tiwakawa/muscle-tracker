@@ -61,7 +61,7 @@ export default function DashboardPage() {
     setExportState("exporting");
     setExportError("");
     try {
-      const { url } = await exportApi.exportCurrentMonth();
+      const { url } = await exportApi.exportAll();
       setExportUrl(url);
       setExportState("done");
     } catch (e) {
@@ -99,7 +99,7 @@ export default function DashboardPage() {
         {/* Export to Google Sheets */}
         <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-700">今月をSheetに同期</p>
+            <p className="text-sm font-medium text-gray-700">スプレッドシートに同期</p>
             <button
               onClick={handleExport}
               disabled={exportState === "exporting"}
