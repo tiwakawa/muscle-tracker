@@ -4,7 +4,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       get "me", to: "me#show"
-      resources :exercises
+      resources :exercises do
+        member { get :last_sets }
+      end
       resources :workouts do
         resources :workout_exercises, only: [:create, :update, :destroy] do
           resources :workout_sets, only: [:create, :update, :destroy]

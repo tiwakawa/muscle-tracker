@@ -1,7 +1,7 @@
 module Api
   module V1
     class ExercisesController < BaseController
-      before_action :set_exercise, only: [:show, :update, :destroy]
+      before_action :set_exercise, only: [:show, :update, :destroy, :last_sets]
 
       def index
         exercises = Exercise.order(:category, :name)
@@ -32,6 +32,16 @@ module Api
       def destroy
         @exercise.destroy
         head :no_content
+      end
+
+      def last_sets
+        workout_exercise = WorkoutExercise
+          .joins(:workout)
+          .where(exercise_id: @exercise.id, workouts: { user_id: current_user.id })
+          .order("workouts.date DESC, workouts.id DESC")
+          .first
+        sets = workout_exercise ? workout_exercise.workout_sets.order(:set_number) : []
+        render json: sets.map { |s| { weight: s.weight, reps: s.reps } }
       end
 
       private

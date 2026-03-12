@@ -102,6 +102,8 @@ export const authApi = {
 // ---- Exercises ----
 export const exercisesApi = {
   list: () => request<Exercise[]>("GET", "/api/v1/exercises"),
+  lastSets: (exerciseId: number) =>
+    request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets`),
 };
 
 // ---- Workouts ----

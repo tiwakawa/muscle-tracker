@@ -69,6 +69,7 @@ export default function NewWorkoutPage() {
   const [gymType, setGymType] = useState("");
   const [memo, setMemo] = useState("");
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
+  const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
@@ -96,6 +97,15 @@ export default function NewWorkoutPage() {
 
   const removeBlock = (blockId: string) => {
     setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+  };
+
+  const handleExerciseChange = (blockId: string, exerciseId: string) => {
+    setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, exerciseId } : b)));
+    if (exerciseId) {
+      exercisesApi.lastSets(parseInt(exerciseId)).then((sets) => {
+        setLastSetsMap((prev) => ({ ...prev, [blockId]: sets }));
+      }).catch(() => {});
+    }
   };
 
   const updateBlock = (blockId: string, field: "exerciseId" | "memo", value: string) => {
@@ -287,6 +297,7 @@ export default function NewWorkoutPage() {
         {/* Exercise blocks */}
         {blocks.map((block, blockIndex) => {
           const exercise = exercises.find((e) => e.id.toString() === block.exerciseId);
+          const lastSets = lastSetsMap[block.id] ?? [];
           return (
             <div key={block.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
               {/* Block header */}
@@ -296,7 +307,7 @@ export default function NewWorkoutPage() {
                 </span>
                 <select
                   value={block.exerciseId}
-                  onChange={(e) => updateBlock(block.id, "exerciseId", e.target.value)}
+                  onChange={(e) => handleExerciseChange(block.id, e.target.value)}
                   className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
                   <option value="" disabled>種目を選択</option>
@@ -326,6 +337,18 @@ export default function NewWorkoutPage() {
                   ×
                 </button>
               </div>
+
+              {/* Previous sets hint */}
+              {block.exerciseId && lastSets.length > 0 && (
+                <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                  <p className="text-xs text-gray-400">
+                    前回：{lastSets.map((s) =>
+                      [s.weight ? `${s.weight}kg` : null, s.reps ? `${s.reps}回` : null]
+                        .filter(Boolean).join("×")
+                    ).join(" / ")}
+                  </p>
+                </div>
+              )}
 
               <div className="px-4 py-3 space-y-3">
                 {/* Exercise memo */}
