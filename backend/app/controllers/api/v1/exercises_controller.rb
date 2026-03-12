@@ -1,7 +1,7 @@
 module Api
   module V1
     class ExercisesController < BaseController
-      before_action :set_exercise, only: [:show, :update, :destroy, :last_sets]
+      before_action :set_exercise, only: [:show, :update, :destroy, :last_sets, :weight_history]
 
       def index
         exercises = Exercise.order(:category, :name)
@@ -32,6 +32,17 @@ module Api
       def destroy
         @exercise.destroy
         head :no_content
+      end
+
+      def weight_history
+        records = WorkoutSet
+          .joins(workout_exercise: :workout)
+          .where(workout_exercises: { exercise_id: @exercise.id }, workouts: { user_id: current_user.id })
+          .where.not(weight: nil)
+          .group("workouts.date")
+          .select("workouts.date AS date, MAX(workout_sets.weight) AS max_weight")
+          .order("workouts.date ASC")
+        render json: records.map { |r| { date: r.date, max_weight: r.max_weight.to_f } }
       end
 
       def last_sets

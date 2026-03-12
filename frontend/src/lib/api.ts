@@ -103,6 +103,8 @@ export const exercisesApi = {
   list: () => request<Exercise[]>("GET", "/api/v1/exercises"),
   lastSets: (exerciseId: number) =>
     request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets`),
+  weightHistory: (exerciseId: number) =>
+    request<{ date: string; max_weight: number }[]>("GET", `/api/v1/exercises/${exerciseId}/weight_history`),
 };
 
 // ---- Workouts ----

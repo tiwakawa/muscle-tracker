@@ -5,7 +5,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       get "me", to: "me#show"
       resources :exercises do
-        member { get :last_sets }
+        member do
+          get :last_sets
+          get :weight_history
+        end
       end
       resources :workouts do
         resources :workout_exercises, only: [:create, :update, :destroy] do
