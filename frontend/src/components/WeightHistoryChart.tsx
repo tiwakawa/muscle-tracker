@@ -26,7 +26,7 @@ export default function WeightHistoryChart({ data }: Props) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={220} style={{ outline: "none" }}>
       <LineChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} style={{ outline: "none" }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis dataKey="date" tick={{ fontSize: 11 }} />

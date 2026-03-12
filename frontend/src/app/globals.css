@@ -25,3 +25,10 @@ body {
     text-wrap: balance;
   }
 }
+
+/* recharts: remove focus outline on touch/hover */
+.recharts-wrapper,
+.recharts-wrapper *:focus,
+.recharts-surface {
+  outline: none;
+}
