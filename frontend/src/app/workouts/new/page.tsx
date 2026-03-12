@@ -87,7 +87,7 @@ export default function NewWorkoutPage() {
       ...prev,
       {
         id: crypto.randomUUID(),
-        exerciseId: exercises[0]?.id.toString() ?? "",
+        exerciseId: "",
         memo: "",
         sets: [newSet()],
       },
@@ -299,6 +299,7 @@ export default function NewWorkoutPage() {
                   onChange={(e) => updateBlock(block.id, "exerciseId", e.target.value)}
                   className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
+                  <option value="" disabled>種目を選択</option>
                   {Object.entries(grouped).map(([cat, exs]) => (
                     <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
                       {exs.map((ex) => (
