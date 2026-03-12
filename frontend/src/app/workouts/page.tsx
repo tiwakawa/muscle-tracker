@@ -136,7 +136,10 @@ export default function WorkoutsPage() {
               <div key={w.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 {/* Header */}
                 <div className="flex items-start justify-between px-4 pt-4 pb-2">
-                  <div className="min-w-0 flex-1 mr-2">
+                  <div
+                    className="min-w-0 flex-1 mr-2 cursor-pointer"
+                    onClick={() => router.push(`/workouts/${w.id}/edit`)}
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-gray-800">{formatDate(w.date)}</span>
                       {formatTimeRange(w.start_time, w.end_time) && (
@@ -153,19 +156,18 @@ export default function WorkoutsPage() {
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {w.condition && (
-                      <span className="text-xl">{CONDITION_EMOJI[w.condition]}</span>
+                      <span
+                        className="text-xl cursor-pointer"
+                        onClick={() => router.push(`/workouts/${w.id}/edit`)}
+                      >
+                        {CONDITION_EMOJI[w.condition]}
+                      </span>
                     )}
                     <button
                       onClick={() => handleAiCopy(w)}
                       className="text-xs text-purple-500 hover:text-purple-700 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-purple-50"
                     >
                       AI用にコピー
-                    </button>
-                    <button
-                      onClick={() => router.push(`/workouts/${w.id}/edit`)}
-                      className="text-xs text-indigo-400 hover:text-indigo-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-indigo-50"
-                    >
-                      編集
                     </button>
                     <button
                       onClick={() => handleDelete(w.id)}
@@ -178,7 +180,10 @@ export default function WorkoutsPage() {
 
                 {/* Exercises */}
                 {w.workout_exercises && w.workout_exercises.length > 0 ? (
-                  <div className="px-4 pb-3 space-y-1">
+                  <div
+                    className="px-4 pb-3 space-y-1 cursor-pointer"
+                    onClick={() => router.push(`/workouts/${w.id}/edit`)}
+                  >
                     {w.workout_exercises.map((we) => (
                       <div key={we.id} className="text-sm">
                         <span className="font-medium text-gray-700">{we.exercise?.name ?? "不明"}</span>
@@ -193,7 +198,12 @@ export default function WorkoutsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 pb-3 text-sm text-gray-400">セットなし</p>
+                  <p
+                    className="px-4 pb-3 text-sm text-gray-400 cursor-pointer"
+                    onClick={() => router.push(`/workouts/${w.id}/edit`)}
+                  >
+                    セットなし
+                  </p>
                 )}
 
                 {/* Memo */}
