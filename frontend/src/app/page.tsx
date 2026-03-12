@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProtectedPage from "@/components/ProtectedPage";
-import WeightChart from "@/components/WeightChart";
-import { workoutsApi, bodyRecordsApi, exportApi } from "@/lib/api";
-import type { Workout, BodyRecord } from "@/lib/types";
+import { workoutsApi, exportApi } from "@/lib/api";
+import type { Workout } from "@/lib/types";
 
 const CONDITION_EMOJI: Record<number, string> = {
   1: "😴",
@@ -41,18 +40,14 @@ function formatDate(dateStr: string) {
 
 export default function DashboardPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [bodyRecords, setBodyRecords] = useState<BodyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportState, setExportState] = useState<"idle" | "exporting" | "done" | "error">("idle");
   const [exportUrl, setExportUrl] = useState<string>("");
   const [exportError, setExportError] = useState<string>("");
 
   useEffect(() => {
-    Promise.all([workoutsApi.list(), bodyRecordsApi.list()])
-      .then(([w, b]) => {
-        setWorkouts(w);
-        setBodyRecords(b);
-      })
+    workoutsApi.list()
+      .then(setWorkouts)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -71,29 +66,17 @@ export default function DashboardPage() {
   }
 
   const recentWorkouts = workouts.slice(0, 5);
-  const latestWeight = (() => {
-    const sorted = [...bodyRecords].sort((a, b) =>
-      b.date.localeCompare(a.date)
-    );
-    return sorted[0]?.weight ? `${sorted[0].weight} kg` : "—";
-  })();
 
   return (
     <ProtectedPage title="💪 Muscle Tracker">
       <div className="px-4 py-4 space-y-5">
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-xs text-gray-400 mb-1">直近の体重</p>
-            <p className="text-2xl font-bold text-gray-800">{latestWeight}</p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-xs text-gray-400 mb-1">累計ワークアウト</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {workouts.length}
-              <span className="text-sm font-normal text-gray-400 ml-1">回</span>
-            </p>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <p className="text-xs text-gray-400 mb-1">累計ワークアウト</p>
+          <p className="text-2xl font-bold text-gray-800">
+            {workouts.length}
+            <span className="text-sm font-normal text-gray-400 ml-1">回</span>
+          </p>
         </div>
 
         {/* Export to Google Sheets */}
@@ -127,24 +110,6 @@ export default function DashboardPage() {
           )}
           {exportState === "error" && (
             <p className="text-sm text-red-500">{exportError}</p>
-          )}
-        </div>
-
-        {/* Weight Chart */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <h2 className="font-semibold text-gray-700 mb-3">体重推移（直近30日）</h2>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-4 border-indigo-600 border-t-transparent rounded-full" />
-            </div>
-          ) : (
-            <WeightChart
-              records={bodyRecords}
-              dataKey="weight"
-              unit="kg"
-              color="#4f46e5"
-              label="体重 (kg)"
-            />
           )}
         </div>
 

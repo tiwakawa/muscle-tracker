@@ -5,7 +5,6 @@ import type {
   Workout,
   WorkoutExercise,
   WorkoutSet,
-  BodyRecord,
 } from "./types";
 
 const API_BASE =
@@ -204,17 +203,4 @@ export const exerciseNotesApi = {
 export const exportApi = {
   exportAll: () =>
     request<{ url: string }>("POST", "/api/v1/export"),
-};
-
-// ---- Body Records ----
-export const bodyRecordsApi = {
-  list: () => request<BodyRecord[]>("GET", "/api/v1/body_records"),
-  create: (data: {
-    date: string;
-    weight?: number;
-    body_fat_percentage?: number;
-  }) =>
-    request<BodyRecord>("POST", "/api/v1/body_records", { body_record: data }),
-  delete: (id: number) =>
-    request<void>("DELETE", `/api/v1/body_records/${id}`),
 };

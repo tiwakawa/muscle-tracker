@@ -12,8 +12,7 @@ Rails.application.routes.draw do
           resources :workout_sets, only: [:create, :update, :destroy]
         end
       end
-      resources :body_records
-      get  "exercise_notes/:exercise_id", to: "exercise_notes#show"
+get  "exercise_notes/:exercise_id", to: "exercise_notes#show"
       put  "exercise_notes/:exercise_id", to: "exercise_notes#update"
       post "export", to: "exports#create"
     end

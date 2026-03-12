@@ -40,16 +40,6 @@ export interface Workout {
   workout_exercises?: WorkoutExercise[];
 }
 
-export interface BodyRecord {
-  id: number;
-  user_id: number;
-  date: string;
-  weight: string | null;
-  body_fat_percentage: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface User {
   id: number;
   email: string;
