@@ -71,6 +71,7 @@ export default function NewWorkoutPage() {
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const focusSetIdRef = useRef<string | null>(null);
+  const focusBlockIdRef = useRef<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
@@ -85,15 +86,9 @@ export default function NewWorkoutPage() {
   }, {});
 
   const addBlock = () => {
-    setBlocks((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        exerciseId: "",
-        memo: "",
-        sets: [newSet()],
-      },
-    ]);
+    const id = crypto.randomUUID();
+    focusBlockIdRef.current = id;
+    setBlocks((prev) => [...prev, { id, exerciseId: "", memo: "", sets: [newSet()] }]);
   };
 
   const removeBlock = (blockId: string) => {
@@ -302,7 +297,16 @@ export default function NewWorkoutPage() {
           const exercise = exercises.find((e) => e.id.toString() === block.exerciseId);
           const lastSets = lastSetsMap[block.id] ?? [];
           return (
-            <div key={block.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div
+              key={block.id}
+              className="bg-white rounded-2xl shadow-sm overflow-hidden"
+              ref={(el) => {
+                if (el && focusBlockIdRef.current === block.id) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  focusBlockIdRef.current = null;
+                }
+              }}
+            >
               {/* Block header */}
               <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
                 <span className="text-xs text-gray-400 font-medium w-5 text-center">

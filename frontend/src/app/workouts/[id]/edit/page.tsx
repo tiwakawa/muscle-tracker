@@ -73,6 +73,7 @@ export default function EditWorkoutPage() {
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const focusSetIdRef = useRef<string | null>(null);
+  const focusBlockIdRef = useRef<string | null>(null);
   const [originalBlockIds, setOriginalBlockIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -116,16 +117,9 @@ export default function EditWorkoutPage() {
   }, {});
 
   const addBlock = () => {
-    setBlocks((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        exerciseId: "",
-        memo: "",
-        sets: [newSet()],
-        originalSetIds: [],
-      },
-    ]);
+    const id = crypto.randomUUID();
+    focusBlockIdRef.current = id;
+    setBlocks((prev) => [...prev, { id, exerciseId: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
   };
 
   const removeBlock = (blockId: string) => {
@@ -395,6 +389,12 @@ export default function EditWorkoutPage() {
               className={`rounded-2xl shadow-sm overflow-hidden ${
                 block.dbId ? "bg-indigo-50" : "bg-white"
               }`}
+              ref={(el) => {
+                if (el && focusBlockIdRef.current === block.id) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  focusBlockIdRef.current = null;
+                }
+              }}
             >
               {/* Block header */}
               <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
