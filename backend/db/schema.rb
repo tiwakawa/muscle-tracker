@@ -10,20 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_300000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "body_records", force: :cascade do |t|
-    t.decimal "body_fat_percentage", precision: 5, scale: 2
-    t.datetime "created_at", null: false
-    t.date "date", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.decimal "weight", precision: 5, scale: 2
-    t.index ["user_id", "date"], name: "index_body_records_on_user_id_and_date"
-    t.index ["user_id"], name: "index_body_records_on_user_id"
-  end
 
   create_table "exercise_notes", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -104,7 +93,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_300000) do
     t.index ["user_id"], name: "index_workouts_on_user_id"
   end
 
-  add_foreign_key "body_records", "users"
   add_foreign_key "exercise_notes", "exercises"
   add_foreign_key "exercise_notes", "users"
   add_foreign_key "workout_exercises", "exercises"
