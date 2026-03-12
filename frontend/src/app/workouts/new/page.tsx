@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
 import { exercisesApi, workoutsApi, workoutExercisesApi, workoutSetsApi, exerciseNotesApi } from "@/lib/api";
@@ -70,6 +70,7 @@ export default function NewWorkoutPage() {
   const [memo, setMemo] = useState("");
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
+  const focusSetIdRef = useRef<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
@@ -115,8 +116,10 @@ export default function NewWorkoutPage() {
   };
 
   const addSetToBlock = (blockId: string) => {
+    const s = newSet();
+    focusSetIdRef.current = s.id;
     setBlocks((prev) =>
-      prev.map((b) => (b.id === blockId ? { ...b, sets: [...b.sets, newSet()] } : b))
+      prev.map((b) => (b.id === blockId ? { ...b, sets: [...b.sets, s] } : b))
     );
   };
 
@@ -376,6 +379,12 @@ export default function NewWorkoutPage() {
                           min={0}
                           step={0.5}
                           className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                          ref={(el) => {
+                            if (el && focusSetIdRef.current === s.id) {
+                              el.focus();
+                              focusSetIdRef.current = null;
+                            }
+                          }}
                         />
                         <span className="absolute right-2 top-2.5 text-xs text-gray-400">kg</span>
                       </div>
