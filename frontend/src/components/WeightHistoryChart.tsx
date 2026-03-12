@@ -32,7 +32,7 @@ export default function WeightHistoryChart({ data }: Props) {
         <XAxis dataKey="date" tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} unit="kg" />
         <Tooltip
-          formatter={(value: number) => [`${value} kg`, "最大重量"]}
+          formatter={(value: number | undefined) => [value != null ? `${value} kg` : "—", "最大重量"]}
           labelFormatter={(label) => label}
         />
         <Line
