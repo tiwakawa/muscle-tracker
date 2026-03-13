@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { aiAdviceApi } from "@/lib/api";
 import { buildAiText } from "@/lib/workoutUtils";
 import type { Workout } from "@/lib/types";
@@ -64,7 +66,28 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
               <div className="animate-spin h-6 w-6 border-4 border-purple-500 border-t-transparent rounded-full" />
             </div>
           ) : advice ? (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{advice}</p>
+            <div className="text-sm text-gray-700 leading-relaxed">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  table: ({ children }) => <div className="overflow-x-auto mb-2"><table className="min-w-full text-xs border-collapse">{children}</table></div>,
+                  thead: ({ children }) => <thead className="bg-gray-100">{children}</thead>,
+                  th: ({ children }) => <th className="border border-gray-300 px-2 py-1 text-left font-semibold">{children}</th>,
+                  td: ({ children }) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+                  h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-1">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-base font-bold mt-4 mb-1">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-sm font-bold mt-3 mb-1">{children}</h3>,
+                  p: ({ children }) => <p className="mb-2">{children}</p>,
+                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                  li: ({ children }) => <li className="ml-2">{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                  hr: () => <hr className="my-3 border-gray-200" />,
+                }}
+              >
+                {advice}
+              </ReactMarkdown>
+            </div>
           ) : (
             <p className="text-sm text-gray-400 py-4 text-center">まだアドバイスはありません</p>
           )}
