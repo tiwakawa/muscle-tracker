@@ -33,8 +33,8 @@ RSpec.describe UserSetting, type: :model do
       expect(UserSetting::DEFAULT_SYSTEM_PROMPT).to include("パーソナルトレーナー")
     end
 
-    it "mentions 3 advice points" do
-      expect(UserSetting::DEFAULT_SYSTEM_PROMPT).to include("3点")
+    it "mentions advice points" do
+      expect(UserSetting::DEFAULT_SYSTEM_PROMPT).to include("以下の点")
     end
   end
 end
