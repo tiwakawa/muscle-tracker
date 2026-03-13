@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
+import AiAdviceModal from "@/components/AiAdviceModal";
 import { workoutsApi } from "@/lib/api";
+import { formatDate } from "@/lib/workoutUtils";
 import type { Workout } from "@/lib/types";
 
 const CONDITION_EMOJI: Record<number, string> = {
@@ -13,14 +15,6 @@ const CONDITION_EMOJI: Record<number, string> = {
   3: "😐",
   4: "😊",
   5: "💪",
-};
-
-const CONDITION_LABEL: Record<number, string> = {
-  1: "最悪",
-  2: "悪い",
-  3: "普通",
-  4: "良い",
-  5: "最高",
 };
 
 const GYM_TYPE_LABEL: Record<string, string> = {
@@ -33,60 +27,11 @@ function formatTimeRange(startTime: string | null, endTime: string | null): stri
   return endTime ? `${startTime}〜${endTime}` : `${startTime}〜`;
 }
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}(${
-    ["日", "月", "火", "水", "木", "金", "土"][d.getDay()]
-  })`;
-}
-
-function formatTimeShort(t: string): string {
-  return t.slice(0, 5);
-}
-
-function buildAiText(w: Workout): string {
-  const lines: string[] = [];
-
-  let header = `【トレーニング記録】${formatDate(w.date)}`;
-  if (w.gym_type && GYM_TYPE_LABEL[w.gym_type]) header += ` ${GYM_TYPE_LABEL[w.gym_type]}`;
-  if (w.start_time) {
-    const timeStr = w.end_time
-      ? `${formatTimeShort(w.start_time)}〜${formatTimeShort(w.end_time)}`
-      : `${formatTimeShort(w.start_time)}〜`;
-    header += ` ${timeStr}`;
-  }
-  lines.push(header);
-
-  if (w.condition) lines.push(`コンディション: ${CONDITION_LABEL[w.condition]}`);
-
-  if (w.workout_exercises && w.workout_exercises.length > 0) {
-    lines.push("");
-    w.workout_exercises.forEach((we, i) => {
-      lines.push(we.exercise?.name ?? "不明");
-      (we.workout_sets ?? []).forEach((ws) => {
-        const setParts: string[] = [];
-        if (ws.weight) setParts.push(`${ws.weight}kg`);
-        if (ws.reps) setParts.push(`${ws.reps}回`);
-        if (setParts.length > 0) lines.push(`  セット${ws.set_number}: ${setParts.join(" × ")}`);
-      });
-      if (we.memo) lines.push(`  当日メモ: ${we.memo}`);
-      if (i < w.workout_exercises!.length - 1) lines.push("");
-    });
-  }
-
-  if (w.memo) {
-    lines.push("");
-    lines.push(`ワークアウトメモ: ${w.memo}`);
-  }
-
-  return lines.join("\n");
-}
-
 export default function WorkoutsPage() {
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(false);
+  const [activeAdviceWorkout, setActiveAdviceWorkout] = useState<Workout | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -100,12 +45,6 @@ export default function WorkoutsPage() {
   useEffect(() => {
     load();
   }, []);
-
-  const handleAiCopy = async (w: Workout) => {
-    await navigator.clipboard.writeText(buildAiText(w));
-    setToast(true);
-    setTimeout(() => setToast(false), 2000);
-  };
 
   const handleDelete = async (id: number) => {
     if (!confirm("このワークアウトを削除しますか？")) return;
@@ -164,10 +103,10 @@ export default function WorkoutsPage() {
                       </span>
                     )}
                     <button
-                      onClick={() => handleAiCopy(w)}
+                      onClick={() => setActiveAdviceWorkout(w)}
                       className="text-xs text-purple-500 hover:text-purple-700 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-purple-50"
                     >
-                      AI用にコピー
+                      AIアドバイス
                     </button>
                     <button
                       onClick={() => handleDelete(w.id)}
@@ -218,11 +157,12 @@ export default function WorkoutsPage() {
         )}
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-xl shadow-lg z-50">
-          コピーしました
-        </div>
+      {/* AI Advice Modal */}
+      {activeAdviceWorkout && (
+        <AiAdviceModal
+          workout={activeAdviceWorkout}
+          onClose={() => setActiveAdviceWorkout(null)}
+        />
       )}
 
       {/* FAB */}

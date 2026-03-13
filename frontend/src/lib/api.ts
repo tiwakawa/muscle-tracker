@@ -206,3 +206,11 @@ export const exportApi = {
   exportAll: () =>
     request<{ url: string }>("POST", "/api/v1/export"),
 };
+
+// ---- AI Advice ----
+export const aiAdviceApi = {
+  get: (workoutId: number) =>
+    request<{ content: string | null; created_at?: string }>("GET", `/api/v1/workouts/${workoutId}/ai_advice`),
+  create: (workoutId: number) =>
+    request<{ content: string; created_at: string }>("POST", `/api/v1/workouts/${workoutId}/ai_advice`),
+};

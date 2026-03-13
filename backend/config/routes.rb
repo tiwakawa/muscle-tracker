@@ -11,6 +11,7 @@ Rails.application.routes.draw do
         end
       end
       resources :workouts do
+        resource :ai_advice, only: [:show, :create]
         resources :workout_exercises, only: [:create, :update, :destroy] do
           resources :workout_sets, only: [:create, :update, :destroy]
         end
