@@ -4,7 +4,7 @@ module Api
       before_action :set_workout
 
       def show
-        advice = @workout.ai_advices.order(created_at: :desc).first
+        advice = @workout.ai_advices.first
         if advice
           render json: { content: advice.content, created_at: advice.created_at }
         else
@@ -16,8 +16,9 @@ module Api
         system_prompt = current_user.user_setting&.effective_system_prompt
         service = AiAdviceService.new(@workout, system_prompt: system_prompt)
         content = service.generate_advice
-        advice = @workout.ai_advices.create!(content: content)
-        render json: { content: advice.content, created_at: advice.created_at }, status: :created
+        advice = AiAdvice.find_or_initialize_by(workout_id: @workout.id)
+        advice.update!(content: content)
+        render json: { content: advice.content, created_at: advice.updated_at }, status: :created
       rescue => e
         render json: { errors: [ e.message ] }, status: :unprocessable_entity
       end

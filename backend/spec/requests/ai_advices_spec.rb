@@ -28,20 +28,10 @@ RSpec.describe "AI Advices API", type: :request do
     context "when advice exists" do
       before { create(:ai_advice, workout: workout, content: "既存アドバイス") }
 
-      it "returns the latest advice" do
+      it "returns the advice" do
         get "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)["content"]).to eq("既存アドバイス")
-      end
-    end
-
-    context "when multiple advices exist" do
-      it "returns the most recent one" do
-        create(:ai_advice, workout: workout, content: "古いアドバイス", created_at: 2.hours.ago)
-        create(:ai_advice, workout: workout, content: "新しいアドバイス", created_at: 1.hour.ago)
-
-        get "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
-        expect(JSON.parse(response.body)["content"]).to eq("新しいアドバイス")
       end
     end
   end
@@ -86,17 +76,18 @@ RSpec.describe "AI Advices API", type: :request do
       expect(body["created_at"]).to be_present
     end
 
-    it "saves the advice to the database" do
+    it "creates a record when none exists" do
       expect {
         post "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
       }.to change(AiAdvice, :count).by(1)
     end
 
-    it "creates a new advice even when one already exists" do
+    it "updates the existing record instead of creating a new one" do
       create(:ai_advice, workout: workout, content: "古いアドバイス")
       expect {
         post "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
-      }.to change(AiAdvice, :count).by(1)
+      }.not_to change(AiAdvice, :count)
+      expect(AiAdvice.find_by(workout: workout).content).to eq("生成されたアドバイス")
     end
 
     context "when API call fails" do
