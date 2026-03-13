@@ -13,7 +13,8 @@ module Api
       end
 
       def create
-        service = AiAdviceService.new(@workout)
+        system_prompt = current_user.user_setting&.effective_system_prompt
+        service = AiAdviceService.new(@workout, system_prompt: system_prompt)
         content = service.generate_advice
         advice = @workout.ai_advices.create!(content: content)
         render json: { content: advice.content, created_at: advice.created_at }, status: :created

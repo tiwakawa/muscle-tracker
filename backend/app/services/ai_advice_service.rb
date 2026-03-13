@@ -16,8 +16,9 @@ class AiAdviceService
     "personal" => "パーソナル"
   }.freeze
 
-  def initialize(workout)
+  def initialize(workout, system_prompt: nil)
     @workout = workout
+    @system_prompt = system_prompt || UserSetting::DEFAULT_SYSTEM_PROMPT
   end
 
   def generate_advice
@@ -79,15 +80,6 @@ class AiAdviceService
   end
 
   def call_claude(workout_text)
-    prompt = <<~PROMPT
-      以下のトレーニング記録を元に、日本語で以下の3点を簡潔にアドバイスしてください。
-      1. 今日のトレーニング評価（ボリューム・バランス・気になる点）
-      2. 追加種目の提案（このまま終わるか、やるなら何か）
-      3. 食事アドバイス（今日の内容に合った食事の提案）
-
-      #{workout_text}
-    PROMPT
-
     uri = URI("https://api.anthropic.com/v1/messages")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -99,7 +91,8 @@ class AiAdviceService
     req.body = {
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
-      messages: [ { role: "user", content: prompt } ]
+      system: @system_prompt,
+      messages: [ { role: "user", content: workout_text } ]
     }.to_json
 
     res = http.request(req)

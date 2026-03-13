@@ -51,6 +51,22 @@ RSpec.describe "AI Advices API", type: :request do
       allow_any_instance_of(AiAdviceService).to receive(:generate_advice).and_return("生成されたアドバイス")
     end
 
+    it "uses nil system_prompt (falling back to default) when no user_setting exists" do
+      expect(AiAdviceService).to receive(:new).with(anything, system_prompt: nil).and_return(double(generate_advice: "デフォルトアドバイス"))
+      post "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
+      expect(response).to have_http_status(:created)
+    end
+
+    context "when user has a custom system_prompt" do
+      before { create(:user_setting, user: user, system_prompt: "カスタムプロンプト") }
+
+      it "passes the custom system_prompt to AiAdviceService" do
+        expect(AiAdviceService).to receive(:new).with(anything, system_prompt: "カスタムプロンプト").and_return(double(generate_advice: "カスタムアドバイス"))
+        post "/api/v1/workouts/#{workout.id}/ai_advice", headers: headers
+        expect(response).to have_http_status(:created)
+      end
+    end
+
     it "returns 401 without authentication" do
       post "/api/v1/workouts/#{workout.id}/ai_advice", headers: { "Origin" => "http://localhost:3001" }
       expect(response).to have_http_status(:unauthorized)

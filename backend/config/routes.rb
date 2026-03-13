@@ -19,6 +19,7 @@ Rails.application.routes.draw do
 get  "exercise_notes/:exercise_id", to: "exercise_notes#show"
       put  "exercise_notes/:exercise_id", to: "exercise_notes#update"
       post "export", to: "exports#create"
+      resource :user_setting, only: [:show, :update]
     end
   end
 

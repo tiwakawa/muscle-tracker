@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/", label: "ホーム", icon: "🏠" },
   { href: "/workouts", label: "ワークアウト", icon: "💪" },
   { href: "/graphs", label: "グラフ", icon: "📈" },
+  { href: "/settings", label: "設定", icon: "⚙️" },
 ];
 
 export default function BottomNav() {

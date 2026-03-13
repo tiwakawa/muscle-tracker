@@ -207,6 +207,21 @@ export const exportApi = {
     request<{ url: string }>("POST", "/api/v1/export"),
 };
 
+// ---- User Settings ----
+export const userSettingsApi = {
+  get: () =>
+    request<{ system_prompt: string | null; default_system_prompt: string }>(
+      "GET",
+      "/api/v1/user_setting"
+    ),
+  update: (systemPrompt: string | null) =>
+    request<{ system_prompt: string | null; default_system_prompt: string }>(
+      "PUT",
+      "/api/v1/user_setting",
+      { user_setting: { system_prompt: systemPrompt } }
+    ),
+};
+
 // ---- AI Advice ----
 export const aiAdviceApi = {
   get: (workoutId: number) =>

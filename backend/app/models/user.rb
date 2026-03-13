@@ -8,5 +8,6 @@ class User < ActiveRecord::Base
   include DeviseTokenAuth::Concerns::User
 
   has_many :workouts, dependent: :destroy
-has_many :exercise_notes, dependent: :destroy
+  has_many :exercise_notes, dependent: :destroy
+  has_one :user_setting, dependent: :destroy
 end
