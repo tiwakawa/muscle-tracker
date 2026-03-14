@@ -14,9 +14,16 @@ export default function LoginPage() {
   const [passwordConf, setPasswordConf] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (getTokens()) router.replace("/");
+    const msg = sessionStorage.getItem("flash");
+    if (msg) {
+      sessionStorage.removeItem("flash");
+      setToast(msg);
+      setTimeout(() => setToast(null), 3000);
+    }
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +40,7 @@ export default function LoginPage() {
         }
         await authApi.signUp(email, password, passwordConf);
       }
+      sessionStorage.setItem("flash", "ログインしました");
       router.replace("/");
     } catch {
       setError(
@@ -47,6 +55,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-600 to-indigo-800 flex flex-col items-center justify-center p-4">
+      {toast && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl shadow-lg text-sm text-white bg-green-500">
+          {toast}
+        </div>
+      )}
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
