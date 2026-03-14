@@ -90,7 +90,7 @@ class AiAdviceService
     req["content-type"] = "application/json"
     req.body = {
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: @system_prompt,
       messages: [ { role: "user", content: workout_text } ]
     }.to_json
