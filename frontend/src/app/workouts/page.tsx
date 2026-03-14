@@ -22,6 +22,11 @@ const GYM_TYPE_LABEL: Record<string, string> = {
   personal: "パーソナル",
 };
 
+const GYM_TYPE_COLOR: Record<string, string> = {
+  anytime: "text-indigo-400",
+  personal: "text-rose-500",
+};
+
 function formatTimeRange(startTime: string | null, endTime: string | null): string | null {
   if (!startTime) return null;
   return endTime ? `${startTime}〜${endTime}` : `${startTime}〜`;
@@ -88,7 +93,7 @@ export default function WorkoutsPage() {
                       )}
                     </div>
                     {w.gym_type && GYM_TYPE_LABEL[w.gym_type] && (
-                      <span className="text-xs text-indigo-400 font-medium">
+                      <span className={`text-xs font-medium ${GYM_TYPE_COLOR[w.gym_type] ?? "text-indigo-400"}`}>
                         {GYM_TYPE_LABEL[w.gym_type]}
                       </span>
                     )}
