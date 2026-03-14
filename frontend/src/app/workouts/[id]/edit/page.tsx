@@ -11,7 +11,7 @@ const CONDITION_OPTIONS = [
   { value: 2, emoji: "😞", label: "悪い" },
   { value: 3, emoji: "😐", label: "普通" },
   { value: 4, emoji: "😊", label: "良い" },
-  { value: 5, emoji: "💪", label: "最高" },
+  { value: 5, emoji: "🤩", label: "最高" },
 ];
 
 const GYM_TYPE_OPTIONS = [

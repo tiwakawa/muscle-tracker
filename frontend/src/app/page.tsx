@@ -11,7 +11,7 @@ const CONDITION_EMOJI: Record<number, string> = {
   2: "😞",
   3: "😐",
   4: "😊",
-  5: "💪",
+  5: "🤩",
 };
 
 const GYM_TYPE_LABEL: Record<string, string> = {
