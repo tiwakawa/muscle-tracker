@@ -16,7 +16,12 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
   const [advice, setAdvice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [copyToast, setCopyToast] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (text: string) => {
+    setToast(text);
+    setTimeout(() => setToast(null), 2000);
+  };
 
   useEffect(() => {
     aiAdviceApi
@@ -40,8 +45,13 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
 
   const handleCopyAiText = async () => {
     await navigator.clipboard.writeText(buildAiText(workout));
-    setCopyToast(true);
-    setTimeout(() => setCopyToast(false), 2000);
+    showToast("トレーニングデータをコピーしました");
+  };
+
+  const handleCopyAdvice = async () => {
+    if (!advice) return;
+    await navigator.clipboard.writeText(advice);
+    showToast("アドバイスをコピーしました");
   };
 
   return (
@@ -101,16 +111,26 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
           >
             {generating ? "取得中..." : advice ? "再取得" : "アドバイスを取得"}
           </button>
+          {advice && (
+            <button
+              onClick={handleCopyAdvice}
+              className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm"
+            >
+              アドバイスをコピー
+            </button>
+          )}
           <button
             onClick={handleCopyAiText}
             className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm"
           >
-            AI用テキストをコピー
+            トレーニングデータをコピー
           </button>
         </div>
 
-        {copyToast && (
-          <p className="mt-2 text-center text-xs text-gray-500">コピーしました</p>
+        {toast && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl shadow-lg text-sm text-white bg-green-500">
+            {toast}
+          </div>
         )}
       </div>
     </div>
