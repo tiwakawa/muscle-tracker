@@ -68,7 +68,7 @@ export default function DashboardPage() {
   const recentWorkouts = workouts.slice(0, 5);
 
   return (
-    <ProtectedPage title="💪 Muscle Tracker">
+    <ProtectedPage title="ホーム">
       <div className="px-4 py-4 space-y-5">
         {/* Stats */}
         <div className="bg-white rounded-2xl shadow-sm p-4">
