@@ -15,9 +15,9 @@ const GYM_TYPE_LABEL: Record<string, string> = {
 
 export function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}(${
-    ["日", "月", "火", "水", "木", "金", "土"][d.getDay()]
-  })`;
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}/${mm}/${dd}(${["日", "月", "火", "水", "木", "金", "土"][d.getDay()]})`;
 }
 
 export function buildAiText(w: Workout): string {

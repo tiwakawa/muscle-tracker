@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
@@ -37,12 +37,16 @@ export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeAdviceWorkout, setActiveAdviceWorkout] = useState<Workout | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState("");
 
   const load = () => {
     setLoading(true);
     workoutsApi
       .list()
-      .then(setWorkouts)
+      .then((data) => {
+        setWorkouts(data);
+        if (data.length > 0) setSelectedMonth(data[0].date.slice(0, 7));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
@@ -50,6 +54,16 @@ export default function WorkoutsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const months = useMemo(() => {
+    const set = new Set(workouts.map((w) => w.date.slice(0, 7)));
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [workouts]);
+
+  const filteredWorkouts = useMemo(
+    () => workouts.filter((w) => w.date.slice(0, 7) === selectedMonth),
+    [workouts, selectedMonth]
+  );
 
   const handleDelete = async (id: number) => {
     if (!confirm("このワークアウトを削除しますか？")) return;
@@ -75,8 +89,27 @@ export default function WorkoutsPage() {
             </Link>
           </div>
         ) : (
+          <>
+            {/* Month selector */}
+            <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3 mb-4">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-3/4 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                {months.map((m) => (
+                  <option key={m} value={m}>
+                    {m.replace("-", "/")}
+                  </option>
+                ))}
+              </select>
+              <span className="w-1/4 text-sm text-gray-500">
+                計{filteredWorkouts.length}回
+              </span>
+            </div>
+
           <div className="space-y-3">
-            {workouts.map((w) => (
+            {filteredWorkouts.map((w) => (
               <div key={w.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                 {/* Header */}
                 <div className="flex items-start justify-between px-4 pt-4 pb-2">
@@ -159,6 +192,7 @@ export default function WorkoutsPage() {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
 
