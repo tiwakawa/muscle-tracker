@@ -2,8 +2,15 @@
 
 [![RSpec](https://github.com/tiwakawa/muscle-tracker/actions/workflows/rspec.yml/badge.svg)](https://github.com/tiwakawa/muscle-tracker/actions/workflows/rspec.yml)
 [![Frontend CI](https://github.com/tiwakawa/muscle-tracker/actions/workflows/frontend.yml/badge.svg)](https://github.com/tiwakawa/muscle-tracker/actions/workflows/frontend.yml)
+[![codecov](https://codecov.io/gh/tiwakawa/muscle-tracker/graph/badge.svg)](https://codecov.io/gh/tiwakawa/muscle-tracker)
 
-筋トレ・体重記録アプリ。スマートフォンに最適化したモバイルファーストのWebアプリです。
+Rails 8 API + Next.js 14 + PostgreSQL + Docker
+
+## Screenshots
+
+| ログイン | ホーム | ワークアウト | グラフ |
+|---|---|---|---|
+| ![login](docs/screenshots/login.png) | ![home](docs/screenshots/home.png) | ![workout](docs/screenshots/workout.png) | ![graph](docs/screenshots/graph.png) |
 
 ## 本番環境
 

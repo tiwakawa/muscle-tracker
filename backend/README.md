@@ -1,26 +1,17 @@
-# README
+# Backend
 
 [![codecov](https://codecov.io/gh/tiwakawa/muscle-tracker/graph/badge.svg)](https://codecov.io/gh/tiwakawa/muscle-tracker)
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails 8 API モード + PostgreSQL（CI）/ MySQL 8（開発）
 
-Things you may want to cover:
+## テスト実行
 
-* Ruby version
+```bash
+docker compose exec backend bundle exec rspec
+```
 
-* System dependencies
+## 起動
 
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+```bash
+docker compose up backend
+```
