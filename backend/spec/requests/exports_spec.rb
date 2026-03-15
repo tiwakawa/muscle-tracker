@@ -12,8 +12,8 @@ RSpec.describe "Exports API", type: :request do
 
     context "when export succeeds" do
       before do
-        allow_any_instance_of(GoogleSheetsExporter).to receive(:export_all)
-          .and_return("https://docs.google.com/spreadsheets/d/test-id")
+        exporter = instance_double(GoogleSheetsExporter, export_all: "https://docs.google.com/spreadsheets/d/test-id")
+        allow(GoogleSheetsExporter).to receive(:new).and_return(exporter)
       end
 
       it "returns the spreadsheet URL" do
@@ -26,8 +26,9 @@ RSpec.describe "Exports API", type: :request do
 
     context "when export fails" do
       before do
-        allow_any_instance_of(GoogleSheetsExporter).to receive(:export_all)
-          .and_raise("Google Sheets API error")
+        exporter = instance_double(GoogleSheetsExporter)
+        allow(exporter).to receive(:export_all).and_raise("Google Sheets API error")
+        allow(GoogleSheetsExporter).to receive(:new).and_return(exporter)
       end
 
       it "returns 422 with error message" do
