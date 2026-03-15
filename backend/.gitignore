@@ -32,3 +32,4 @@
 
 # SimpleCov coverage report
 /coverage/
+/coverage/lcov/
