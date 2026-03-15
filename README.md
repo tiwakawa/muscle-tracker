@@ -283,6 +283,8 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 /workouts           ワークアウト一覧（種目・セット詳細表示、編集・削除）
 /workouts/new       ワークアウト記録（日付・コンディション・メモ・セット入力）
 /workouts/:id/edit  ワークアウト編集（セットの追加・更新・削除）
+/graphs             種目別最大重量推移グラフ
+/settings           AIシステムプロンプト設定
 ```
 
 ### コンポーネント構成
