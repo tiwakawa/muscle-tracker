@@ -24,9 +24,10 @@ Rails 8 API + Next.js 14 + PostgreSQL + Docker
 ## プロジェクト概要
 
 - ワークアウト（種目・セット・重量・回数）の記録・編集・削除
-- 体重・体脂肪率の記録とグラフ表示
-- ダッシュボードで体重推移と直近のワークアウトを確認
+- トレーニングカレンダーで記録を確認
 - 今月のデータを Google Sheets へエクスポート
+- ワークアウトに対する AI アドバイス（Claude API）
+- PWA 対応（ホーム画面追加）
 - トークン認証によるユーザー管理
 
 ---
@@ -236,16 +237,6 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 | PUT | `/api/v1/workouts/:workout_id/workout_sets/:id` | 更新 |
 | DELETE | `/api/v1/workouts/:workout_id/workout_sets/:id` | 削除 |
 
-### ボディ記録
-
-| メソッド | パス | 説明 |
-|---|---|---|
-| GET | `/api/v1/body_records` | 一覧取得 |
-| POST | `/api/v1/body_records` | 作成 |
-| GET | `/api/v1/body_records/:id` | 詳細取得 |
-| PUT | `/api/v1/body_records/:id` | 更新 |
-| DELETE | `/api/v1/body_records/:id` | 削除 |
-
 ### エクスポート
 
 | メソッド | パス | 説明 |
@@ -258,11 +249,10 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 
 ```
 /login              ログイン・新規登録
-/                   ダッシュボード（体重グラフ・直近ワークアウト）
+/                   ダッシュボード（カレンダー・累計ワークアウト数・Google Sheets連携）
 /workouts           ワークアウト一覧（種目・セット詳細表示、編集・削除）
 /workouts/new       ワークアウト記録（日付・コンディション・メモ・セット入力）
 /workouts/:id/edit  ワークアウト編集（セットの追加・更新・削除）
-/body               ボディ記録（体重・体脂肪グラフ、履歴一覧）
 ```
 
 ### コンポーネント構成
@@ -288,7 +278,6 @@ users           devise_token_auth が管理
 exercises       name(unique), category(enum), ...
 workouts        user_id, date, condition(1-5), memo, ...
 workout_sets    workout_id, exercise_id, set_number, weight, reps, ...
-body_records    user_id, date, weight, body_fat_percentage, ...
 ```
 
 エクササイズカテゴリ: `chest` / `back` / `shoulders` / `arms` / `legs` / `core` / `cardio` / `other`
@@ -335,12 +324,3 @@ docker compose up
 
 エクスポートすると `YYYY-MM-ワークアウト` と `YYYY-MM-ボディ` という名前のシートが自動作成され、今月分のデータが書き込まれます。
 
----
-
-## 今後の予定
-
-- [x] **Google Sheets 連携** — 記録データを Google スプレッドシートへ自動エクスポート
-- [x] **デプロイ** — Render (バックエンド) / Vercel (フロントエンド) / Neon (DB)
-- [ ] **グラフ強化** — 種目別のボリューム推移グラフ、1RM推定
-- [ ] **トレーニングテンプレート** — よく使うセット構成の保存・呼び出し
-- [ ] **PWA 対応** — ホーム画面追加、オフライン対応
