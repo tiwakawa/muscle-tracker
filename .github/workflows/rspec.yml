@@ -51,3 +51,10 @@ jobs:
 
       - name: Run RSpec
         run: bundle exec rspec --format progress
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: backend/coverage
+          fail_ci_if_error: false

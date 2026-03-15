@@ -1,5 +1,7 @@
 # README
 
+[![codecov](https://codecov.io/gh/tiwakawa/muscle-tracker/graph/badge.svg)](https://codecov.io/gh/tiwakawa/muscle-tracker)
+
 This README would normally document whatever steps are necessary to get the
 application up and running.
 
