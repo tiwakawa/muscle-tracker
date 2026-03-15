@@ -291,14 +291,17 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 
 ```
 src/
-├── app/                    # Next.js App Router ページ
+├── app/                        # Next.js App Router ページ
 ├── components/
-│   ├── ProtectedPage.tsx   # 認証ガード + ヘッダー + BottomNav ラッパー
-│   ├── BottomNav.tsx       # ボトムナビゲーション
-│   └── WeightChart.tsx     # Recharts 折れ線グラフ
+│   ├── ProtectedPage.tsx       # 認証ガード + ヘッダー + BottomNav ラッパー
+│   ├── BottomNav.tsx           # ボトムナビゲーション
+│   ├── WorkoutCalendar.tsx     # トレーニングカレンダー
+│   ├── AiAdviceModal.tsx       # AIアドバイス表示モーダル
+│   └── WeightHistoryChart.tsx  # Recharts 折れ線グラフ
 └── lib/
-    ├── api.ts              # fetch ラッパー（トークン自動管理）
-    └── types.ts            # 型定義
+    ├── api.ts                  # fetch ラッパー（トークン自動管理）
+    ├── types.ts                # 型定義
+    └── workoutUtils.ts         # 日付フォーマット・AIテキスト生成
 ```
 
 ---
@@ -306,10 +309,14 @@ src/
 ## データベース構成
 
 ```
-users           devise_token_auth が管理
-exercises       name(unique), category(enum), ...
-workouts        user_id, date, condition(1-5), memo, ...
-workout_sets    workout_id, exercise_id, set_number, weight, reps, ...
+users              devise_token_auth が管理
+exercises          name(unique), category(enum), ...
+exercise_notes     user_id, exercise_id(unique per user), note, ...
+workouts           user_id, date, condition(1-5), memo, start_time, end_time, gym_type, ...
+workout_exercises  workout_id, exercise_id, order, memo, ...
+workout_sets       workout_id, workout_exercise_id, set_number, weight, reps, ...
+ai_advices         workout_id(unique), content, ...
+user_settings      user_id(unique), system_prompt, ...
 ```
 
 エクササイズカテゴリ: `chest` / `back` / `shoulders` / `arms` / `legs` / `core` / `cardio` / `other`
