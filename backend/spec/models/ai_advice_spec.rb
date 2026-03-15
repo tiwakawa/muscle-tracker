@@ -5,6 +5,7 @@ RSpec.describe AiAdvice, type: :model do
 
   describe "validations" do
     it { is_expected.to validate_presence_of(:content) }
+    it { is_expected.to validate_uniqueness_of(:workout_id) }
   end
 
   describe "associations" do

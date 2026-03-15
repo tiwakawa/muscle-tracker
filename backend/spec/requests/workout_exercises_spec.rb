@@ -41,6 +41,13 @@ RSpec.describe "WorkoutExercises API", type: :request do
   describe "PUT /api/v1/workouts/:workout_id/workout_exercises/:id" do
     let(:workout_exercise) { create(:workout_exercise, workout: workout, exercise: exercise, order: 1) }
 
+    it "returns 401 without authentication" do
+      put "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}",
+        params: { workout_exercise: { order: 2 } }.to_json,
+        headers: json_headers
+      expect(response).to have_http_status(:unauthorized)
+    end
+
     it "updates the workout_exercise" do
       put "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}",
         params: { workout_exercise: { memo: "Updated memo", order: 2 } }.to_json,
@@ -51,10 +58,24 @@ RSpec.describe "WorkoutExercises API", type: :request do
       expect(body["memo"]).to eq("Updated memo")
       expect(body["order"]).to eq(2)
     end
+
+    it "returns 404 for another user's workout" do
+      other_workout = create(:workout)
+      other_we = create(:workout_exercise, workout: other_workout, exercise: exercise, order: 1)
+      put "/api/v1/workouts/#{other_workout.id}/workout_exercises/#{other_we.id}",
+        params: { workout_exercise: { order: 2 } }.to_json,
+        headers: headers
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   describe "DELETE /api/v1/workouts/:workout_id/workout_exercises/:id" do
     let!(:workout_exercise) { create(:workout_exercise, workout: workout, exercise: exercise, order: 1) }
+
+    it "returns 401 without authentication" do
+      delete "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}"
+      expect(response).to have_http_status(:unauthorized)
+    end
 
     it "deletes the workout_exercise" do
       delete "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}",
@@ -62,6 +83,14 @@ RSpec.describe "WorkoutExercises API", type: :request do
 
       expect(response).to have_http_status(:no_content)
       expect(WorkoutExercise.find_by(id: workout_exercise.id)).to be_nil
+    end
+
+    it "returns 404 for another user's workout" do
+      other_workout = create(:workout)
+      other_we = create(:workout_exercise, workout: other_workout, exercise: exercise, order: 1)
+      delete "/api/v1/workouts/#{other_workout.id}/workout_exercises/#{other_we.id}",
+        headers: headers
+      expect(response).to have_http_status(:not_found)
     end
   end
 end
