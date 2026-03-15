@@ -217,6 +217,15 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 | GET | `/api/v1/exercises/:id` | 詳細取得 |
 | PUT | `/api/v1/exercises/:id` | 更新 |
 | DELETE | `/api/v1/exercises/:id` | 削除 |
+| GET | `/api/v1/exercises/:id/last_sets` | 直近セット取得 |
+| GET | `/api/v1/exercises/:id/weight_history` | 重量履歴取得 |
+
+### エクササイズノート
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| GET | `/api/v1/exercise_notes/:exercise_id` | ノート取得 |
+| PUT | `/api/v1/exercise_notes/:exercise_id` | ノート更新 |
 
 ### ワークアウト
 
@@ -228,14 +237,35 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 | PUT | `/api/v1/workouts/:id` | 更新 |
 | DELETE | `/api/v1/workouts/:id` | 削除 |
 
+### ワークアウト種目
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/api/v1/workouts/:workout_id/workout_exercises` | 作成 |
+| PUT | `/api/v1/workouts/:workout_id/workout_exercises/:id` | 更新 |
+| DELETE | `/api/v1/workouts/:workout_id/workout_exercises/:id` | 削除 |
+
 ### ワークアウトセット
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| GET | `/api/v1/workouts/:workout_id/workout_sets` | 一覧取得 |
-| POST | `/api/v1/workouts/:workout_id/workout_sets` | 作成 |
-| PUT | `/api/v1/workouts/:workout_id/workout_sets/:id` | 更新 |
-| DELETE | `/api/v1/workouts/:workout_id/workout_sets/:id` | 削除 |
+| POST | `/api/v1/workouts/:workout_id/workout_exercises/:workout_exercise_id/workout_sets` | 作成 |
+| PUT | `/api/v1/workouts/:workout_id/workout_exercises/:workout_exercise_id/workout_sets/:id` | 更新 |
+| DELETE | `/api/v1/workouts/:workout_id/workout_exercises/:workout_exercise_id/workout_sets/:id` | 削除 |
+
+### AIアドバイス
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| GET | `/api/v1/workouts/:workout_id/ai_advice` | 取得 |
+| POST | `/api/v1/workouts/:workout_id/ai_advice` | 生成（Claude API） |
+
+### ユーザー設定
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| GET | `/api/v1/user_setting` | 設定取得 |
+| PUT | `/api/v1/user_setting` | 設定更新 |
 
 ### エクスポート
 
