@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <img src="/icons/icon-192.png" alt="Muscle Tracker" className="w-20 h-20 mx-auto mb-3 rounded-2xl" />
           <h1 className="text-2xl font-bold text-white">Muscle Tracker</h1>
-          <p className="text-indigo-200 text-sm mt-1">筋トレ・ボディ記録アプリ</p>
+          <p className="text-indigo-200 text-sm mt-1">筋トレ記録アプリ</p>
         </div>
 
         {/* Card */}

@@ -1,7 +1,7 @@
 {
   "name": "Muscle Tracker",
   "short_name": "Muscle Tracker",
-  "description": "筋トレ・ボディ記録アプリ",
+  "description": "筋トレ記録アプリ",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

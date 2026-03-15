@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Muscle Tracker",
-  description: "筋トレ・ボディ記録アプリ",
+  description: "筋トレ記録アプリ",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
