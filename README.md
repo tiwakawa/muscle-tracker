@@ -199,8 +199,10 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 
 ---
 
+## API 一覧
+
 <details>
-<summary>API 一覧</summary>
+<summary>詳細を見る</summary>
 
 ### 認証
 
@@ -335,8 +337,10 @@ user_settings      user_id(unique), system_prompt, ...
 
 ---
 
+## Google Sheets 連携セットアップ
+
 <details>
-<summary>Google Sheets 連携セットアップ</summary>
+<summary>詳細を見る</summary>
 
 ダッシュボードの「今月をSheetに同期」ボタンを使うには、以下の手順でGoogle Cloud の設定が必要です。
 
