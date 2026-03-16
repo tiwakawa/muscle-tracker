@@ -342,6 +342,8 @@ user_settings      user_id(unique), system_prompt, ...
 <details>
 <summary>詳細を見る</summary>
 
+<br>
+
 ダッシュボードの「今月をSheetに同期」ボタンを使うには、以下の手順でGoogle Cloud の設定が必要です。
 
 ### 1. Google Cloud Console でプロジェクト作成
