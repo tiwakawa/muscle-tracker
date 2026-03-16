@@ -6,6 +6,15 @@
 
 Rails 8 API + Next.js 14 + PostgreSQL + Docker
 
+## このアプリについて
+
+トレーニングジムでの記録管理をシンプルに行うための筋トレ記録Webアプリです。
+
+- **スムーズな記録** — セット・重量・回数を素早く入力できるUIを意識しています
+- **必要な機能に特化** — 記録・グラフ・AIアドバイス・外部出力に絞っています
+- **データの永続化** — Google Sheetsへのエクスポートで長期的な記録管理が可能です
+- **AIアドバイス** — 当日のトレーニング内容をもとにClaude APIがフィードバックを生成します
+
 ## Screenshots
 
 | ログイン | ホーム | ワークアウト | グラフ |
@@ -190,7 +199,8 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 
 ---
 
-## API 一覧
+<details>
+<summary>API 一覧</summary>
 
 ### 認証
 
@@ -273,6 +283,8 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 |---|---|---|
 | POST | `/api/v1/export` | 今月のデータを Google Sheets へエクスポート |
 
+</details>
+
 ---
 
 ## 画面構成
@@ -323,7 +335,8 @@ user_settings      user_id(unique), system_prompt, ...
 
 ---
 
-## Google Sheets 連携セットアップ
+<details>
+<summary>Google Sheets 連携セットアップ</summary>
 
 ダッシュボードの「今月をSheetに同期」ボタンを使うには、以下の手順でGoogle Cloud の設定が必要です。
 
@@ -362,4 +375,6 @@ docker compose up
 ```
 
 エクスポートすると `YYYY-MM-ワークアウト` と `YYYY-MM-ボディ` という名前のシートが自動作成され、今月分のデータが書き込まれます。
+
+</details>
 
