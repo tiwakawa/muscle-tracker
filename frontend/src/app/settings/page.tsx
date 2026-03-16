@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
-import { userSettingsApi, clearTokens } from "@/lib/api";
+import { userSettingsApi, exportApi, clearTokens } from "@/lib/api";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -11,6 +11,8 @@ export default function SettingsPage() {
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exportState, setExportState] = useState<"idle" | "exporting" | "done">("idle");
+  const [exportUrl, setExportUrl] = useState("");
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
@@ -29,6 +31,19 @@ export default function SettingsPage() {
   const handleReset = () => {
     if (!confirm("デフォルトのプロンプトに戻しますか？\n（保存はされません）")) return;
     setSystemPrompt(defaultPrompt);
+  };
+
+  const handleExport = async () => {
+    setExportState("exporting");
+    try {
+      const { url } = await exportApi.exportAll();
+      setExportUrl(url);
+      setExportState("done");
+      showToast("success", "同期しました");
+    } catch {
+      setExportState("idle");
+      showToast("error", "同期に失敗しました");
+    }
   };
 
   const handleLogout = () => {
@@ -100,6 +115,27 @@ export default function SettingsPage() {
           >
             {saving ? "保存中..." : "保存"}
           </button>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-3">Google Sheets 連携</p>
+          <button
+            onClick={handleExport}
+            disabled={exportState === "exporting"}
+            className="px-6 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          >
+            {exportState === "exporting" ? "同期中..." : "データを同期"}
+          </button>
+          {exportState === "done" && (
+            <a
+              href={exportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-2 text-sm text-indigo-600 underline"
+            >
+              Google Sheetsで確認する →
+            </a>
+          )}
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-200">
