@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
-import { userSettingsApi } from "@/lib/api";
+import { userSettingsApi, clearTokens } from "@/lib/api";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [systemPrompt, setSystemPrompt] = useState("");
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,12 @@ export default function SettingsPage() {
   const handleReset = () => {
     if (!confirm("デフォルトのプロンプトに戻しますか？\n（保存はされません）")) return;
     setSystemPrompt(defaultPrompt);
+  };
+
+  const handleLogout = () => {
+    clearTokens();
+    sessionStorage.setItem("flash", "ログアウトしました");
+    router.replace("/login");
   };
 
   const handleSave = async () => {
@@ -91,6 +99,15 @@ export default function SettingsPage() {
             className="px-6 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             {saving ? "保存中..." : "保存"}
+          </button>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            ログアウト
           </button>
         </div>
       </div>
