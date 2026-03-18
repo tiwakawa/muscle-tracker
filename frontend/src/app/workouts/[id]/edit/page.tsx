@@ -220,6 +220,7 @@ export default function EditWorkoutPage() {
         if (block.dbId) {
           // Update existing workout_exercise
           await workoutExercisesApi.update(workoutId, block.dbId, {
+            exercise_id: parseInt(block.exerciseId),
             order: i + 1,
             memo: block.memo,
           });
