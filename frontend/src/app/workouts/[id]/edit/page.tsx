@@ -74,6 +74,7 @@ export default function EditWorkoutPage() {
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const focusSetIdRef = useRef<string | null>(null);
   const focusBlockIdRef = useRef<string | null>(null);
+  const memoRef = useRef<HTMLTextAreaElement>(null);
   const [originalBlockIds, setOriginalBlockIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -110,6 +111,14 @@ export default function EditWorkoutPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [workoutId]);
+
+  useEffect(() => {
+    const el = memoRef.current;
+    if (el && memo) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [memo]);
 
   const grouped = exercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
     (acc[ex.category] ??= []).push(ex);
@@ -372,10 +381,16 @@ export default function EditWorkoutPage() {
             ワークアウトメモ（任意）
           </label>
           <textarea
+            ref={memoRef}
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }}
             placeholder="今日の感想など..."
-            rows={2}
+            rows={3}
             className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
         </div>
