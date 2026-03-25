@@ -115,8 +115,10 @@ export default function EditWorkoutPage() {
   useEffect(() => {
     const el = memoRef.current;
     if (el && memo) {
+      const scrollY = window.scrollY;
       el.style.height = "auto";
       el.style.height = `${el.scrollHeight}px`;
+      window.scrollTo({ top: scrollY });
     }
   }, [memo]);
 
@@ -386,8 +388,10 @@ export default function EditWorkoutPage() {
             onChange={(e) => setMemo(e.target.value)}
             onInput={(e) => {
               const el = e.currentTarget;
+              const scrollY = window.scrollY;
               el.style.height = "auto";
               el.style.height = `${el.scrollHeight}px`;
+              window.scrollTo({ top: scrollY });
             }}
             placeholder="今日の感想など..."
             rows={3}
