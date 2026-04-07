@@ -68,3 +68,8 @@ npm run build        # 本番ビルド
 - `main` ブランチへのpushで自動デプロイ（Vercel / Render.com）
 - GitHub Actions: RSpec（backend）/ tsc + lint（frontend）が自動実行
 - PRマージ前にCIが通っていることを確認する
+
+## 秘密情報の扱い
+
+- このプロジェクトでは、秘密情報を含む可能性があるファイルを読まない・表示しない・要約しないこと。
+- 必要な場合でも秘密の値は扱わず、環境変数名のみを前提に進めること。
