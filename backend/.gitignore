@@ -33,3 +33,7 @@
 # SimpleCov coverage report
 /coverage/
 /coverage/lcov/
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
