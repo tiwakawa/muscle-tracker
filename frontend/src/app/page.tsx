@@ -34,13 +34,6 @@ export default function DashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-xs text-gray-400 mb-1">累計ワークアウト</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {workouts.length}
-              <span className="text-sm font-normal text-gray-400 ml-1">回</span>
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm p-4">
             <p className="text-xs text-gray-400 mb-1">{selectedMonth + 1}月</p>
             <p className="text-2xl font-bold text-gray-800">
               {monthlyWorkouts.length}
@@ -53,6 +46,13 @@ export default function DashboardPage() {
                 {personalCount > 0 && <span className="text-rose-500">パーソナル {personalCount}</span>}
               </p>
             )}
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <p className="text-xs text-gray-400 mb-1">累計ワークアウト</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {workouts.length}
+              <span className="text-sm font-normal text-gray-400 ml-1">回</span>
+            </p>
           </div>
         </div>
 
