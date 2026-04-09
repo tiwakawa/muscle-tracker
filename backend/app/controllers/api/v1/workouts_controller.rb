@@ -54,6 +54,10 @@ module Api
         }).tap do |json|
           json["start_time"] = workout.start_time&.strftime("%H:%M")
           json["end_time"]   = workout.end_time&.strftime("%H:%M")
+          json["workout_exercises"]&.sort_by! { |we| we["order"].to_i }
+          json["workout_exercises"]&.each do |we|
+            we["workout_sets"]&.sort_by! { |ws| ws["set_number"].to_i }
+          end
         end
       end
     end
