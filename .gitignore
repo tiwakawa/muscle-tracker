@@ -8,5 +8,5 @@
 # Ruby LSP (editor tooling)
 .ruby-lsp/
 
-# Claude Code
-.claude/
+# Claude Code (local settings only)
+.claude/settings.local.json

@@ -18,30 +18,43 @@
 
 ```
 muscle-tracker/
-├── backend/        # Rails API
-├── frontend/       # Next.js
-├── .devcontainer/  # Dev Container設定
+├── backend/           # Rails API
+├── frontend/          # Next.js
+├── .claude/           # Claude Code設定・カスタムコマンド
+├── .devcontainer/     # Dev Container設定（参考用）
 └── docker-compose.yml
 ```
 
 ## よく使うコマンド
 
-### バックエンド（DevContainer内 `/workspace/backend`）
+すべてのコマンドは `docker compose exec` 経由で実行する。
+
+### バックエンド
 
 ```bash
-bundle exec rails s -p 3000 -b '0.0.0.0'  # サーバー起動
-bundle exec rspec                           # テスト実行
-bundle exec rails db:migrate                # マイグレーション
-bundle exec rails db:seed                   # シードデータ投入
+docker compose exec backend bundle exec rspec                           # テスト実行
+docker compose exec backend bundle exec rails db:migrate                # マイグレーション
+docker compose exec backend bundle exec rails db:seed                   # シードデータ投入
+docker compose exec backend bundle exec rubocop                         # コードスタイルチェック
+docker compose exec backend bundle exec brakeman --no-pager             # セキュリティチェック
+docker compose exec backend bundle exec bundler-audit check --update    # gem脆弱性チェック
 ```
 
-### フロントエンド（DevContainer内 `/workspace/frontend`）
+### フロントエンド
 
 ```bash
-npm run dev          # 開発サーバー起動（port 3001）
-npm run lint         # ESLintチェック
-npx tsc --noEmit     # 型チェック
-npm run build        # 本番ビルド
+docker compose exec frontend npm run lint          # ESLintチェック
+docker compose exec frontend npx tsc --noEmit      # 型チェック
+docker compose exec frontend npm run build         # 本番ビルド
+```
+
+### Docker Compose
+
+```bash
+docker compose up -d            # 全サービスをバックグラウンド起動
+docker compose logs -f backend  # バックエンドのログを追跡
+docker compose logs -f frontend # フロントエンドのログを追跡
+docker compose ps               # サービスの状態確認
 ```
 
 ### ローカルアクセス
@@ -63,11 +76,31 @@ npm run build        # 本番ビルド
 - **テスト**: RSpec + Factory Bot + Shoulda Matchers
 - フォーマットはVSCode保存時に自動適用（Ruby LSP / Prettier）
 
+## テスト方針
+
+- **バックエンド**: RSpec + Factory Bot + Shoulda Matchers
+  - モデルスペック: `backend/spec/models/`
+  - リクエストスペック: `backend/spec/requests/`
+  - サービススペック: `backend/spec/services/`
+  - ファクトリ: `backend/spec/factories/`
+  - カバレッジ: SimpleCov（lcov形式でCodecovに送信）
+- **フロントエンド**: CIでの型チェック（tsc）+ ESLintのみ
+- 新しいモデル・エンドポイント追加時は、対応するスペックも作成する
+- テスト実行: `docker compose exec backend bundle exec rspec`
+- 特定ファイルのみ: `docker compose exec backend bundle exec rspec spec/requests/exercises_spec.rb`
+
 ## CI/CD
 
 - `main` ブランチへのpushで自動デプロイ（Vercel / Render.com）
 - GitHub Actions: RSpec（backend）/ tsc + lint（frontend）が自動実行
 - PRマージ前にCIが通っていることを確認する
+
+## Claude Code カスタムコマンド
+
+- `/lint` — バックエンド全体のlint・セキュリティチェック + フロントエンドの型チェック・lint
+- `/test` — バックエンドのRSpecテスト実行（引数でファイル指定可能）
+- `/db-status` — データベースの各テーブルの状態確認
+- `/type-check` — フロントエンドの型チェック実行
 
 ## 秘密情報の扱い
 

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(docker compose exec backend *)",
+      "Bash(docker compose exec frontend *)",
+      "Bash(docker compose up *)",
+      "Bash(docker compose logs *)",
+      "Bash(docker compose ps *)",
+      "Bash(docker compose build *)",
+      "Bash(git *)"
+    ],
+    "deny": [
+      "Bash(docker compose down*)",
+      "Bash(docker compose rm*)",
+      "Bash(rm -rf *)",
+      "Bash(bundle exec rails db:drop*)",
+      "Bash(bundle exec rails db:reset*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "filepath=\"$CLAUDE_FILE_PATH\"; if [[ \"$filepath\" == *.rb ]] && [[ \"$filepath\" == */backend/* ]]; then container_path=\"/app${filepath#*backend}\"; docker compose exec -T backend bundle exec rubocop -a \"$container_path\" 2>/dev/null || true; fi",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
