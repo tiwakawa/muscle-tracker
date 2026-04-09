@@ -161,11 +161,11 @@ export default function WorkoutsPage() {
                     className="px-4 pb-3 space-y-1 cursor-pointer"
                     onClick={() => router.push(`/workouts/${w.id}/edit`)}
                   >
-                    {w.workout_exercises.map((we) => (
+                    {[...w.workout_exercises].sort((a, b) => a.order - b.order).map((we) => (
                       <div key={we.id} className="text-sm">
                         <span className="font-medium text-gray-700">{we.exercise?.name ?? "不明"}</span>
                         <span className="text-gray-400 ml-2">
-                          {we.workout_sets?.map((ws) =>
+                          {[...(we.workout_sets ?? [])].sort((a, b) => a.set_number - b.set_number).map((ws) =>
                             [ws.weight ? `${ws.weight}kg` : null, ws.reps ? `${ws.reps}回` : null]
                               .filter(Boolean)
                               .join("×")

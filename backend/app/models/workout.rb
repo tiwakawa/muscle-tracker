@@ -1,6 +1,6 @@
 class Workout < ApplicationRecord
   belongs_to :user
-  has_many :workout_exercises, dependent: :destroy
+  has_many :workout_exercises, -> { order(:order) }, dependent: :destroy
   has_many :workout_sets, through: :workout_exercises
   has_many :ai_advices, dependent: :destroy
 

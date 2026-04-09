@@ -92,19 +92,27 @@ export default function EditWorkoutPage() {
         setGymType(workout.gym_type ?? "");
         setMemo(workout.memo ?? "");
 
-        const loadedBlocks: ExerciseBlock[] = (workout.workout_exercises ?? []).map((we) => ({
-          id: `db-${we.id}`,
-          dbId: we.id,
-          exerciseId: we.exercise_id.toString(),
-          memo: we.memo ?? "",
-          sets: (we.workout_sets ?? []).map((ws) => ({
-            id: `db-${ws.id}`,
-            dbId: ws.id,
-            weight: ws.weight ?? "",
-            reps: ws.reps?.toString() ?? "",
-          })),
-          originalSetIds: (we.workout_sets ?? []).map((ws) => ws.id),
-        }));
+        const sortedExercises = [...(workout.workout_exercises ?? [])].sort(
+          (a, b) => a.order - b.order
+        );
+        const loadedBlocks: ExerciseBlock[] = sortedExercises.map((we) => {
+          const sortedSets = [...(we.workout_sets ?? [])].sort(
+            (a, b) => a.set_number - b.set_number
+          );
+          return {
+            id: `db-${we.id}`,
+            dbId: we.id,
+            exerciseId: we.exercise_id.toString(),
+            memo: we.memo ?? "",
+            sets: sortedSets.map((ws) => ({
+              id: `db-${ws.id}`,
+              dbId: ws.id,
+              weight: ws.weight ?? "",
+              reps: ws.reps?.toString() ?? "",
+            })),
+            originalSetIds: sortedSets.map((ws) => ws.id),
+          };
+        });
         setBlocks(loadedBlocks);
         setOriginalBlockIds(loadedBlocks.map((b) => b.dbId!));
       })
