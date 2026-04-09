@@ -91,6 +91,18 @@ export default function NewWorkoutPage() {
     setBlocks((prev) => [...prev, { id, exerciseId: "", memo: "", sets: [newSet()] }]);
   };
 
+  const moveBlock = (blockId: string, direction: "up" | "down") => {
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b.id === blockId);
+      if (idx < 0) return prev;
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    });
+  };
+
   const removeBlock = (blockId: string) => {
     setBlocks((prev) => prev.filter((b) => b.id !== blockId));
   };
@@ -337,6 +349,22 @@ export default function NewWorkoutPage() {
                 >
                   📝
                 </button>
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => moveBlock(block.id, "up")}
+                    disabled={blockIndex === 0}
+                    className="text-gray-300 hover:text-indigo-500 text-xs leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveBlock(block.id, "down")}
+                    disabled={blockIndex === blocks.length - 1}
+                    className="text-gray-300 hover:text-indigo-500 text-xs leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300"
+                  >
+                    ▼
+                  </button>
+                </div>
                 <button
                   onClick={() => removeBlock(block.id)}
                   className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
