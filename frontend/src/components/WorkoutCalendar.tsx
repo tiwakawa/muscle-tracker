@@ -15,9 +15,10 @@ const MONTHS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", 
 interface Props {
   workouts: Workout[];
   loading: boolean;
+  onMonthChange?: (year: number, month: number) => void;
 }
 
-export default function WorkoutCalendar({ workouts, loading }: Props) {
+export default function WorkoutCalendar({ workouts, loading, onMonthChange }: Props) {
   const router = useRouter();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -45,13 +46,19 @@ export default function WorkoutCalendar({ workouts, loading }: Props) {
   }, [year, month]);
 
   const prevMonth = () => {
-    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
-    else setMonth((m) => m - 1);
+    const newYear = month === 0 ? year - 1 : year;
+    const newMonth = month === 0 ? 11 : month - 1;
+    setYear(newYear);
+    setMonth(newMonth);
+    onMonthChange?.(newYear, newMonth);
   };
 
   const nextMonth = () => {
-    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
-    else setMonth((m) => m + 1);
+    const newYear = month === 11 ? year + 1 : year;
+    const newMonth = month === 11 ? 0 : month + 1;
+    setYear(newYear);
+    setMonth(newMonth);
+    onMonthChange?.(newYear, newMonth);
   };
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -102,7 +109,7 @@ export default function WorkoutCalendar({ workouts, loading }: Props) {
             {MONTHS.map((label, i) => (
               <button
                 key={i}
-                onClick={() => { setYear(pickerYear); setMonth(i); setPickerOpen(false); }}
+                onClick={() => { setYear(pickerYear); setMonth(i); setPickerOpen(false); onMonthChange?.(pickerYear, i); }}
                 className={`py-2 rounded-xl text-sm font-medium transition-colors ${
                   pickerYear === year && i === month
                     ? "bg-indigo-600 text-white"
