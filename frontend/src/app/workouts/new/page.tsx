@@ -321,9 +321,25 @@ export default function NewWorkoutPage() {
             >
               {/* Block header */}
               <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
-                <span className="text-xs text-gray-400 font-medium w-5 text-center">
-                  {blockIndex + 1}
-                </span>
+                <div className="flex flex-col items-center w-5 flex-shrink-0">
+                  <button
+                    onClick={() => moveBlock(block.id, "up")}
+                    disabled={blockIndex === 0}
+                    className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+                  >
+                    ▲
+                  </button>
+                  <span className="text-xs text-gray-400 font-medium">
+                    {blockIndex + 1}
+                  </span>
+                  <button
+                    onClick={() => moveBlock(block.id, "down")}
+                    disabled={blockIndex === blocks.length - 1}
+                    className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+                  >
+                    ▼
+                  </button>
+                </div>
                 <select
                   value={block.exerciseId}
                   onChange={(e) => handleExerciseChange(block.id, e.target.value)}
@@ -349,22 +365,6 @@ export default function NewWorkoutPage() {
                 >
                   📝
                 </button>
-                <div className="flex flex-col gap-0.5 flex-shrink-0">
-                  <button
-                    onClick={() => moveBlock(block.id, "up")}
-                    disabled={blockIndex === 0}
-                    className="text-gray-300 hover:text-indigo-500 text-xs leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveBlock(block.id, "down")}
-                    disabled={blockIndex === blocks.length - 1}
-                    className="text-gray-300 hover:text-indigo-500 text-xs leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300"
-                  >
-                    ▼
-                  </button>
-                </div>
                 <button
                   onClick={() => removeBlock(block.id)}
                   className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
