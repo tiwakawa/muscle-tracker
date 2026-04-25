@@ -51,7 +51,7 @@ docker compose exec frontend npm run build         # 本番ビルド
 ### Docker Compose
 
 ```bash
-docker compose up -d            # 全サービスをバックグラウンド起動
+./start.sh -d                   # 全サービスをバックグラウンド起動（Keychain経由）
 docker compose logs -f backend  # バックエンドのログを追跡
 docker compose logs -f frontend # フロントエンドのログを追跡
 docker compose ps               # サービスの状態確認
@@ -61,6 +61,15 @@ docker compose ps               # サービスの状態確認
 
 - フロントエンド: http://localhost:3001
 - バックエンドAPI: http://localhost:3000
+
+## 環境変数
+
+- **秘密情報**: macOS Keychainに登録、`start.sh`経由で取得
+  - `muscle-tracker-google-credentials-json` → GOOGLE_CREDENTIALS_JSON
+  - `muscle-tracker-google-spreadsheet-id` → GOOGLE_SPREADSHEET_ID
+  - `muscle-tracker-anthropic-api-key` → ANTHROPIC_API_KEY
+- **DB接続**: docker-compose.ymlにハードコード（ローカル開発用）
+- 本番（Render/Vercel）の環境変数は各ダッシュボードで管理
 
 ## アーキテクチャの注意事項
 

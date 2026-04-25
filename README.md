@@ -371,13 +371,19 @@ user_settings      user_id(unique), system_prompt, ...
 
 ### 5. 環境変数の設定
 
-```bash
-# JSONファイルの内容を1行にして環境変数に設定
-export GOOGLE_CREDENTIALS_JSON=$(cat /path/to/service-account.json)
-export GOOGLE_SPREADSHEET_ID=your_spreadsheet_id_here
+macOS Keychainに秘密情報を登録：
 
-# Docker Compose を起動
-docker compose up
+```bash
+security add-generic-password -a "$USER" -s "muscle-tracker-google-credentials-json" -w '$(cat /path/to/service-account.json)'
+security add-generic-password -a "$USER" -s "muscle-tracker-google-spreadsheet-id" -w "your_spreadsheet_id_here"
+security add-generic-password -a "$USER" -s "muscle-tracker-anthropic-api-key" -w "your_api_key_here"
+```
+
+`start.sh` がKeychainから自動取得してコンテナに渡します：
+
+```bash
+./start.sh        # 起動
+./start.sh -d     # バックグラウンド起動
 ```
 
 エクスポートすると `YYYY-MM-ワークアウト` と `YYYY-MM-ボディ` という名前のシートが自動作成され、今月分のデータが書き込まれます。
