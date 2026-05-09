@@ -27,6 +27,7 @@ export default function DashboardPage() {
   );
   const anytimeCount = monthlyWorkouts.filter((w) => w.gym_type === "anytime").length;
   const personalCount = monthlyWorkouts.filter((w) => w.gym_type === "personal").length;
+  const homeCount = monthlyWorkouts.filter((w) => w.gym_type === "home").length;
 
   return (
     <ProtectedPage title="ホーム">
@@ -39,11 +40,13 @@ export default function DashboardPage() {
               {monthlyWorkouts.length}
               <span className="text-sm font-normal text-gray-400 ml-1">回</span>
             </p>
-            {(anytimeCount > 0 || personalCount > 0) && (
-              <p className="text-[10px] text-gray-400 mt-1">
+            {(anytimeCount > 0 || personalCount > 0 || homeCount > 0) && (
+              <p className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-x-1">
                 {anytimeCount > 0 && <span className="text-indigo-500">エニタイム {anytimeCount}</span>}
-                {anytimeCount > 0 && personalCount > 0 && <span className="mx-1">/</span>}
+                {anytimeCount > 0 && (personalCount > 0 || homeCount > 0) && <span>/</span>}
                 {personalCount > 0 && <span className="text-rose-500">パーソナル {personalCount}</span>}
+                {personalCount > 0 && homeCount > 0 && <span>/</span>}
+                {homeCount > 0 && <span className="text-emerald-500">自宅 {homeCount}</span>}
               </p>
             )}
           </div>

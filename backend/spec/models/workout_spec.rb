@@ -42,7 +42,7 @@ RSpec.describe Workout, type: :model do
     end
 
     it "accepts valid gym_type values" do
-      %w[anytime personal].each do |val|
+      %w[anytime personal home].each do |val|
         subject.gym_type = val
         expect(subject).to be_valid, "expected gym_type '#{val}' to be valid"
       end

@@ -17,6 +17,7 @@ const CONDITION_OPTIONS = [
 const GYM_TYPE_OPTIONS = [
   { value: "anytime", label: "エニタイム" },
   { value: "personal", label: "パーソナル" },
+  { value: "home", label: "自宅" },
 ];
 
 const CATEGORY_JP: Record<string, string> = {

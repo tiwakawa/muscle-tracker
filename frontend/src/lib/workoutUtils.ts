@@ -11,6 +11,7 @@ const CONDITION_LABEL: Record<number, string> = {
 const GYM_TYPE_LABEL: Record<string, string> = {
   anytime: "エニタイム",
   personal: "パーソナル",
+  home: "自宅",
 };
 
 export function formatDate(dateStr: string) {

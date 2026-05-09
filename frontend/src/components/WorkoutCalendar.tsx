@@ -7,6 +7,7 @@ import type { Workout } from "@/lib/types";
 const DOT_COLOR: Record<string, string> = {
   anytime: "bg-indigo-400",
   personal: "bg-rose-500",
+  home: "bg-emerald-500",
 };
 
 const DAYS_OF_WEEK = ["日", "月", "火", "水", "木", "金", "土"];

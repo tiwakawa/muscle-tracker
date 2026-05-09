@@ -22,6 +22,8 @@ exercises = [
   { name: "チェストプレス", category: "chest" },
   { name: "ヒップアブダクション", category: "legs" },
   { name: "ヒップアダクション", category: "legs" },
+  { name: "ヒップヒンジ", category: "legs" },
+  { name: "シングルヒップヒンジ", category: "legs" },
 ]
 
 exercises.each do |attrs|

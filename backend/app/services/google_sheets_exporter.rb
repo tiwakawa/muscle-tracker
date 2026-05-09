@@ -43,7 +43,7 @@ class GoogleSheetsExporter
   end
 
   CONDITION_LABELS = { 1 => "最悪", 2 => "悪い", 3 => "普通", 4 => "良い", 5 => "最高" }.freeze
-  GYM_TYPE_LABELS = { "anytime" => "エニタイム", "personal" => "パーソナル" }.freeze
+  GYM_TYPE_LABELS = { "anytime" => "エニタイム", "personal" => "パーソナル", "home" => "自宅" }.freeze
 
   def format_time(t)
     t&.strftime("%H:%M")

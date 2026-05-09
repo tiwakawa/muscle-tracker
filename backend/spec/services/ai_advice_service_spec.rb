@@ -75,6 +75,18 @@ RSpec.describe AiAdviceService do
       end
     end
 
+    context "when workout has home gym_type" do
+      let(:workout) { create(:workout, user: user, date: "2026-03-01", gym_type: "home") }
+
+      before { stub_anthropic_success }
+
+      it "includes home gym type label in message content" do
+        described_class.new(workout).generate_advice
+        expect(WebMock).to have_requested(:post, "https://api.anthropic.com/v1/messages")
+          .with { |req| JSON.parse(req.body)["messages"][0]["content"].include?("自宅") }
+      end
+    end
+
     context "when workout has exercises and sets" do
       let(:exercise) { create(:exercise, name: "ベンチプレス") }
       let(:workout_exercise) { create(:workout_exercise, workout: workout, exercise: exercise, order: 1) }
