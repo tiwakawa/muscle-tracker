@@ -12,6 +12,7 @@ const GYM_TYPE_LABEL: Record<string, string> = {
   anytime: "エニタイム",
   personal: "パーソナル",
   home: "自宅",
+  municipal: "区営ジム",
 };
 
 export function formatDate(dateStr: string) {

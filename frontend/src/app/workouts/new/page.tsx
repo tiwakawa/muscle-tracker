@@ -18,6 +18,7 @@ const GYM_TYPE_OPTIONS = [
   { value: "anytime", label: "エニタイム" },
   { value: "personal", label: "パーソナル" },
   { value: "home", label: "自宅" },
+  { value: "municipal", label: "区営ジム" },
 ];
 
 const CATEGORY_JP: Record<string, string> = {

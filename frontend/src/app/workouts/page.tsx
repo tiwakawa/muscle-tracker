@@ -21,12 +21,14 @@ const GYM_TYPE_LABEL: Record<string, string> = {
   anytime: "エニタイム",
   personal: "パーソナル",
   home: "自宅",
+  municipal: "区営ジム",
 };
 
 const GYM_TYPE_COLOR: Record<string, string> = {
   anytime: "text-indigo-400",
   personal: "text-rose-500",
   home: "text-emerald-500",
+  municipal: "text-amber-500",
 };
 
 function formatTimeRange(startTime: string | null, endTime: string | null): string | null {

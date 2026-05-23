@@ -14,7 +14,8 @@ class AiAdviceService
   GYM_TYPE_LABEL = {
     "anytime" => "エニタイム",
     "personal" => "パーソナル",
-    "home" => "自宅"
+    "home" => "自宅",
+    "municipal" => "区営ジム"
   }.freeze
 
   def initialize(workout, system_prompt: nil)

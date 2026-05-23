@@ -4,7 +4,7 @@ class Workout < ApplicationRecord
   has_many :workout_sets, through: :workout_exercises
   has_many :ai_advices, dependent: :destroy
 
-  GYM_TYPES = %w[anytime personal home].freeze
+  GYM_TYPES = %w[anytime personal home municipal].freeze
 
   validates :date, presence: true
   validates :condition, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 5 }, allow_nil: true
