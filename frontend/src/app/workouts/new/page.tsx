@@ -27,7 +27,7 @@ const CATEGORY_JP: Record<string, string> = {
   shoulders: "肩",
   arms: "腕",
   legs: "脚",
-  core: "体幹",
+  core: "腹・体幹",
   cardio: "有酸素",
   other: "その他",
 };
