@@ -40,7 +40,8 @@ export function buildAiText(w: Workout): string {
   if (w.workout_exercises && w.workout_exercises.length > 0) {
     lines.push("");
     w.workout_exercises.forEach((we, i) => {
-      lines.push(we.exercise?.name ?? "不明");
+      const exerciseLabel = (we.exercise?.name ?? "不明") + (we.side ? `(${we.side})` : "");
+      lines.push(exerciseLabel);
       (we.workout_sets ?? []).forEach((ws) => {
         const setParts: string[] = [];
         if (ws.weight) setParts.push(`${ws.weight}kg`);

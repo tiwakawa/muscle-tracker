@@ -58,7 +58,7 @@ class GoogleSheetsExporter
   end
 
   def build_ai_rows(workouts)
-    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "ワークアウトメモ", "種目", "セット番号", "重量(kg)", "回数", "当日メモ"]]
+    rows = [["日付", "開始時間", "終了時間", "ジムタイプ", "コンディション", "ワークアウトメモ", "種目", "サイド", "セット番号", "重量(kg)", "回数", "当日メモ"]]
     workouts.each do |workout|
       base = [
         workout.date.to_s,
@@ -69,11 +69,11 @@ class GoogleSheetsExporter
         workout.memo
       ]
       if workout.workout_exercises.empty?
-        rows << base + ["", "", "", "", ""]
+        rows << base + ["", "", "", "", "", ""]
       else
         workout.workout_exercises.order(:order).each do |we|
           we.workout_sets.order(:set_number).each do |ws|
-            rows << base + [we.exercise&.name, ws.set_number, ws.weight, ws.reps, we.memo]
+            rows << base + [we.exercise&.name, we.side.presence, ws.set_number, ws.weight, ws.reps, we.memo]
           end
         end
       end
@@ -97,13 +97,14 @@ class GoogleSheetsExporter
   end
 
   def build_detail_rows(workouts)
-    rows = [["日付", "種目", "セット番号", "重量(kg)", "回数", "当日メモ"]]
+    rows = [["日付", "種目", "サイド", "セット番号", "重量(kg)", "回数", "当日メモ"]]
     workouts.each do |workout|
       workout.workout_exercises.order(:order).each do |we|
         we.workout_sets.order(:set_number).each do |ws|
           rows << [
             workout.date.to_s,
             we.exercise&.name,
+            we.side.presence,
             ws.set_number,
             ws.weight,
             ws.reps,

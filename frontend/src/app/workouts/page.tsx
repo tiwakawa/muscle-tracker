@@ -167,7 +167,7 @@ export default function WorkoutsPage() {
                   >
                     {[...w.workout_exercises].sort((a, b) => a.order - b.order).map((we) => (
                       <div key={we.id} className="text-sm">
-                        <span className="font-medium text-gray-700">{we.exercise?.name ?? "不明"}</span>
+                        <span className="font-medium text-gray-700">{we.exercise?.name ?? "不明"}{we.side ? `(${we.side})` : ""}</span>
                         <span className="text-gray-400 ml-2">
                           {[...(we.workout_sets ?? [])].sort((a, b) => a.set_number - b.set_number).map((ws) =>
                             [ws.weight ? `${ws.weight}kg` : null, ws.reps ? `${ws.reps}回` : null]

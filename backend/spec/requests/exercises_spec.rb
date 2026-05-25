@@ -146,6 +146,31 @@ RSpec.describe "Exercises API", type: :request do
       expect(body[0]["reps"]).to eq(8)
     end
 
+    it "filters by side when side param is given" do
+      workout = create(:workout, user: user, date: Date.today)
+      we_right = create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+      we_left = create(:workout_exercise, workout: workout, exercise: exercise, order: 2, side: "左")
+      create(:workout_set, workout_exercise: we_right, weight: 50.0, reps: 10, set_number: 1)
+      create(:workout_set, workout_exercise: we_left, weight: 45.0, reps: 12, set_number: 1)
+
+      get "/api/v1/exercises/#{exercise.id}/last_sets", params: { side: "左" }, headers: headers
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body.length).to eq(1)
+      expect(body[0]["weight"].to_f).to eq(45.0)
+    end
+
+    it "returns only side-less sets when no side param" do
+      workout = create(:workout, user: user, date: Date.today)
+      we_right = create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+      create(:workout_set, workout_exercise: we_right, weight: 50.0, reps: 10, set_number: 1)
+
+      get "/api/v1/exercises/#{exercise.id}/last_sets", headers: headers
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body).to eq([])
+    end
+
     it "does not return other users' sets" do
       other_workout = create(:workout)
       other_we = create(:workout_exercise, workout: other_workout, exercise: exercise, order: 1)

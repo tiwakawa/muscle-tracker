@@ -43,6 +43,7 @@ interface ExerciseBlock {
   id: string;
   dbId?: number;
   exerciseId: string;
+  side: string;
   memo: string;
   sets: SetDraft[];
   originalSetIds: number[];
@@ -105,6 +106,7 @@ export default function EditWorkoutPage() {
             id: `db-${we.id}`,
             dbId: we.id,
             exerciseId: we.exercise_id.toString(),
+            side: we.side ?? "",
             memo: we.memo ?? "",
             sets: sortedSets.map((ws) => ({
               id: `db-${ws.id}`,
@@ -140,7 +142,7 @@ export default function EditWorkoutPage() {
   const addBlock = () => {
     const id = crypto.randomUUID();
     focusBlockIdRef.current = id;
-    setBlocks((prev) => [...prev, { id, exerciseId: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
+    setBlocks((prev) => [...prev, { id, exerciseId: "", side: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
   };
 
   const moveBlock = (blockId: string, direction: "up" | "down") => {
@@ -162,16 +164,25 @@ export default function EditWorkoutPage() {
   const handleExerciseChange = (blockId: string, exerciseId: string) => {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, exerciseId } : b)));
     if (exerciseId) {
-      exercisesApi.lastSets(parseInt(exerciseId)).then((sets) => {
+      const block = blocks.find((b) => b.id === blockId);
+      exercisesApi.lastSets(parseInt(exerciseId), block?.side || undefined).then((sets) => {
         setLastSetsMap((prev) => ({ ...prev, [blockId]: sets }));
       }).catch(() => {});
     }
   };
 
-  const updateBlock = (blockId: string, field: "exerciseId" | "memo", value: string) => {
+  const updateBlock = (blockId: string, field: "exerciseId" | "side" | "memo", value: string) => {
     setBlocks((prev) =>
       prev.map((b) => (b.id === blockId ? { ...b, [field]: value } : b))
     );
+    if (field === "side") {
+      const block = blocks.find((b) => b.id === blockId);
+      if (block?.exerciseId) {
+        exercisesApi.lastSets(parseInt(block.exerciseId), value || undefined).then((sets) => {
+          setLastSetsMap((prev) => ({ ...prev, [blockId]: sets }));
+        }).catch(() => {});
+      }
+    }
   };
 
   const addSetToBlock = (blockId: string) => {
@@ -256,6 +267,7 @@ export default function EditWorkoutPage() {
             exercise_id: parseInt(block.exerciseId),
             order: i + 1,
             memo: block.memo,
+            side: block.side,
           });
           weId = block.dbId;
 
@@ -287,6 +299,7 @@ export default function EditWorkoutPage() {
             exercise_id: parseInt(block.exerciseId),
             order: i + 1,
             memo: block.memo,
+            side: block.side || undefined,
           });
           weId = we.id;
 
@@ -439,57 +452,75 @@ export default function EditWorkoutPage() {
               }}
             >
               {/* Block header */}
-              <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-gray-100">
-                <div className="flex flex-col items-center w-5 flex-shrink-0">
-                  <button
-                    onClick={() => moveBlock(block.id, "up")}
-                    disabled={blockIndex === 0}
-                    className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+              <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-center w-5 flex-shrink-0">
+                    <button
+                      onClick={() => moveBlock(block.id, "up")}
+                      disabled={blockIndex === 0}
+                      className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+                    >
+                      ▲
+                    </button>
+                    <span className="text-xs text-gray-400 font-medium">
+                      {blockIndex + 1}
+                    </span>
+                    <button
+                      onClick={() => moveBlock(block.id, "down")}
+                      disabled={blockIndex === blocks.length - 1}
+                      className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <select
+                    value={block.exerciseId}
+                    onChange={(e) => handleExerciseChange(block.id, e.target.value)}
+                    className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   >
-                    ▲
+                    <option value="" disabled>種目を選択</option>
+                    {Object.entries(grouped).map(([cat, exs]) => (
+                      <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
+                        {exs.map((ex) => (
+                          <option key={ex.id} value={ex.id}>
+                            {ex.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() =>
+                      exercise && openNoteModal(exercise.id, exercise.name)
+                    }
+                    title="種目メモを編集"
+                    className="text-lg leading-none text-gray-400 hover:text-indigo-500 transition-colors flex-shrink-0"
+                  >
+                    📝
                   </button>
-                  <span className="text-xs text-gray-400 font-medium">
-                    {blockIndex + 1}
-                  </span>
                   <button
-                    onClick={() => moveBlock(block.id, "down")}
-                    disabled={blockIndex === blocks.length - 1}
-                    className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
+                    onClick={() => removeBlock(block.id)}
+                    className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
                   >
-                    ▼
+                    ×
                   </button>
                 </div>
-                <select
-                  value={block.exerciseId}
-                  onChange={(e) => handleExerciseChange(block.id, e.target.value)}
-                  className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  <option value="" disabled>種目を選択</option>
-                  {Object.entries(grouped).map(([cat, exs]) => (
-                    <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
-                      {exs.map((ex) => (
-                        <option key={ex.id} value={ex.id}>
-                          {ex.name}
-                        </option>
-                      ))}
-                    </optgroup>
+                {/* Side selector */}
+                <div className="flex items-center gap-2 mt-2 ml-7">
+                  {["左", "右"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={(e) => { updateBlock(block.id, "side", block.side === s ? "" : s); (e.target as HTMLElement).blur(); }}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium focus:outline-none ${
+                        block.side === s
+                          ? "bg-indigo-500 text-white"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {s}
+                    </button>
                   ))}
-                </select>
-                <button
-                  onClick={() =>
-                    exercise && openNoteModal(exercise.id, exercise.name)
-                  }
-                  title="種目メモを編集"
-                  className="text-lg leading-none text-gray-400 hover:text-indigo-500 transition-colors flex-shrink-0"
-                >
-                  📝
-                </button>
-                <button
-                  onClick={() => removeBlock(block.id)}
-                  className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
-                >
-                  ×
-                </button>
+                </div>
               </div>
 
               {/* Previous sets hint */}

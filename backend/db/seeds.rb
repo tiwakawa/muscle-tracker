@@ -23,7 +23,6 @@ exercises = [
   { name: "ヒップアブダクション", category: "legs" },
   { name: "ヒップアダクション", category: "legs" },
   { name: "ヒップヒンジ", category: "legs" },
-  { name: "シングルヒップヒンジ", category: "legs" },
   { name: "アブドミナル", category: "core" },
   { name: "バックエクステンション", category: "back" },
 ]

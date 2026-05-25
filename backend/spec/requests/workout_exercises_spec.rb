@@ -19,6 +19,34 @@ RSpec.describe "WorkoutExercises API", type: :request do
       expect(body["memo"]).to eq("Good")
     end
 
+    it "creates a workout_exercise with side" do
+      post "/api/v1/workouts/#{workout.id}/workout_exercises",
+        params: { workout_exercise: { exercise_id: exercise.id, order: 1, side: "右" } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["side"]).to eq("右")
+    end
+
+    it "rejects duplicate exercise + side in same workout" do
+      create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+      post "/api/v1/workouts/#{workout.id}/workout_exercises",
+        params: { workout_exercise: { exercise_id: exercise.id, order: 2, side: "右" } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "allows same exercise with different side" do
+      create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+      post "/api/v1/workouts/#{workout.id}/workout_exercises",
+        params: { workout_exercise: { exercise_id: exercise.id, order: 2, side: "左" } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+    end
+
     it "returns 422 when order is missing" do
       post "/api/v1/workouts/#{workout.id}/workout_exercises",
         params: { workout_exercise: { exercise_id: exercise.id } }.to_json,

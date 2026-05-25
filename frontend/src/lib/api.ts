@@ -101,8 +101,8 @@ export const authApi = {
 // ---- Exercises ----
 export const exercisesApi = {
   list: () => request<Exercise[]>("GET", "/api/v1/exercises"),
-  lastSets: (exerciseId: number) =>
-    request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets`),
+  lastSets: (exerciseId: number, side?: string) =>
+    request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets${side ? `?side=${encodeURIComponent(side)}` : ""}`),
   weightHistory: (exerciseId: number) =>
     request<{ date: string; max_weight: number }[]>("GET", `/api/v1/exercises/${exerciseId}/weight_history`),
 };
@@ -137,7 +137,7 @@ export const workoutsApi = {
 export const workoutExercisesApi = {
   create: (
     workoutId: number,
-    data: { exercise_id: number; order: number; memo?: string | null }
+    data: { exercise_id: number; order: number; memo?: string | null; side?: string }
   ) =>
     request<WorkoutExercise>(
       "POST",
@@ -147,7 +147,7 @@ export const workoutExercisesApi = {
   update: (
     workoutId: number,
     id: number,
-    data: Partial<{ exercise_id: number; order: number; memo: string | null }>
+    data: Partial<{ exercise_id: number; order: number; memo: string | null; side: string }>
   ) =>
     request<WorkoutExercise>(
       "PUT",

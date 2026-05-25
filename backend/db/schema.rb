@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_13_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_25_150641) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,9 +78,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_200000) do
     t.bigint "exercise_id", null: false
     t.text "memo"
     t.integer "order", null: false
+    t.string "side", default: "", null: false
     t.datetime "updated_at", null: false
     t.bigint "workout_id", null: false
     t.index ["exercise_id"], name: "index_workout_exercises_on_exercise_id"
+    t.index ["workout_id", "exercise_id", "side"], name: "index_workout_exercises_on_workout_exercise_side", unique: true
     t.index ["workout_id"], name: "index_workout_exercises_on_workout_id"
   end
 

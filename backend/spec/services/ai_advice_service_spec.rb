@@ -112,6 +112,22 @@ RSpec.describe AiAdviceService do
       end
     end
 
+    context "when workout_exercise has side" do
+      let(:exercise) { create(:exercise, name: "ヒップヒンジ") }
+      let(:workout_exercise) { create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "左") }
+
+      before do
+        create(:workout_set, workout_exercise: workout_exercise, weight: 10.0, reps: 10, set_number: 1)
+        stub_anthropic_success
+      end
+
+      it "includes side in exercise name in message content" do
+        described_class.new(workout).generate_advice
+        expect(WebMock).to have_requested(:post, "https://api.anthropic.com/v1/messages")
+          .with { |req| JSON.parse(req.body)["messages"][0]["content"].include?("ヒップヒンジ(左)") }
+      end
+    end
+
     context "when workout has a memo" do
       let(:workout) { create(:workout, user: user, date: "2026-03-01", memo: "調子が良かった") }
 

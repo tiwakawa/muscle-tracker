@@ -37,7 +37,7 @@ module Api
       end
 
       def workout_exercise_params
-        params.require(:workout_exercise).permit(:exercise_id, :order, :memo)
+        params.require(:workout_exercise).permit(:exercise_id, :order, :memo, :side)
       end
     end
   end

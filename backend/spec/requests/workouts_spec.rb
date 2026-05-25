@@ -66,6 +66,19 @@ RSpec.describe "Workouts API", type: :request do
       expect(JSON.parse(response.body)["id"]).to eq(workout.id)
     end
 
+    it "includes side in workout_exercises" do
+      exercise = create(:exercise)
+      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+
+      get "/api/v1/workouts/#{workout.id}", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      exercises = body["workout_exercises"]
+      expect(exercises).to be_present
+      expect(exercises[0]["side"]).to eq("右")
+    end
+
     it "returns 404 for another user's workout" do
       other_workout = create(:workout)
       get "/api/v1/workouts/#{other_workout.id}", headers: headers

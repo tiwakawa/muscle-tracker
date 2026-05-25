@@ -52,7 +52,9 @@ class AiAdviceService
     if workout_exercises.any?
       lines << ""
       workout_exercises.each_with_index do |we, i|
-        lines << (we.exercise&.name || "不明")
+        exercise_label = we.exercise&.name || "不明"
+        exercise_label += "(#{we.side})" if we.side.present?
+        lines << exercise_label
         we.workout_sets.order(:set_number).each do |ws|
           set_parts = []
           set_parts << "#{ws.weight}kg" if ws.weight

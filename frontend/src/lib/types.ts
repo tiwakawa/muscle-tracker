@@ -19,6 +19,7 @@ export interface WorkoutExercise {
   workout_id: number;
   exercise_id: number;
   order: number;
+  side: string;
   memo: string | null;
   created_at: string;
   updated_at: string;
