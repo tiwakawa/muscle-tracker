@@ -2,23 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import ProtectedPage from "@/components/ProtectedPage";
-import { exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
+import { getTokens, exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
-
-const CONDITION_OPTIONS = [
-  { value: 1, emoji: "😴", label: "最悪" },
-  { value: 2, emoji: "😞", label: "悪い" },
-  { value: 3, emoji: "😐", label: "普通" },
-  { value: 4, emoji: "😊", label: "良い" },
-  { value: 5, emoji: "🤩", label: "最高" },
-];
+import ConditionScale from "@/components/workout/ConditionScale";
+import DatePickerSheet from "@/components/workout/DatePickerSheet";
+import ReorderList from "@/components/workout/ReorderList";
 
 const GYM_TYPE_OPTIONS = [
   { value: "anytime", label: "エニタイム" },
   { value: "personal", label: "パーソナル" },
   { value: "home", label: "自宅" },
   { value: "municipal", label: "区営ジム" },
+];
+
+const SIDE_OPTIONS = [
+  { value: "", label: "両側" },
+  { value: "左", label: "左" },
+  { value: "右", label: "右" },
 ];
 
 const CATEGORY_JP: Record<string, string> = {
@@ -61,11 +61,28 @@ function newSet(): SetDraft {
   return { id: crypto.randomUUID(), weight: "", reps: "" };
 }
 
+function formatDateJP(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const dow = "日月火水木金土"[d.getDay()];
+  return `${month}月${day}日（${dow}）`;
+}
+
 export default function EditWorkoutPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const workoutId = parseInt(id);
+  const workoutId = Number(id);
+  const isValidId = Number.isInteger(workoutId) && workoutId > 0;
 
+  const [ready, setReady] = useState(false);
+
+  // Guard against invalid workout ID
+  useEffect(() => {
+    if (!isValidId) {
+      router.replace("/workouts");
+    }
+  }, [isValidId, router]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [date, setDate] = useState("");
   const [condition, setCondition] = useState<number>(3);
@@ -77,14 +94,24 @@ export default function EditWorkoutPage() {
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const focusSetIdRef = useRef<string | null>(null);
   const focusBlockIdRef = useRef<string | null>(null);
-  const memoRef = useRef<HTMLTextAreaElement>(null);
   const [originalBlockIds, setOriginalBlockIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [dateOpen, setDateOpen] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
 
   useEffect(() => {
+    if (!getTokens()) {
+      router.replace("/login");
+    } else {
+      setReady(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready || !isValidId) return;
     Promise.all([exercisesApi.list(), workoutsApi.get(workoutId)])
       .then(([exs, workout]) => {
         setExercises(exs);
@@ -122,39 +149,24 @@ export default function EditWorkoutPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [workoutId]);
-
-  useEffect(() => {
-    const el = memoRef.current;
-    if (el && memo) {
-      const scrollY = window.scrollY;
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
-      window.scrollTo({ top: scrollY });
-    }
-  }, [memo]);
+  }, [ready, isValidId, workoutId]);
 
   const grouped = exercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
     (acc[ex.category] ??= []).push(ex);
     return acc;
   }, {});
 
+  const totalSets = blocks.reduce((a, b) => a + b.sets.length, 0);
+  const totalVolume = blocks.reduce(
+    (a, block) =>
+      a + block.sets.reduce((b, s) => b + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0),
+    0
+  );
+
   const addBlock = () => {
     const id = crypto.randomUUID();
     focusBlockIdRef.current = id;
     setBlocks((prev) => [...prev, { id, exerciseId: "", side: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
-  };
-
-  const moveBlock = (blockId: string, direction: "up" | "down") => {
-    setBlocks((prev) => {
-      const idx = prev.findIndex((b) => b.id === blockId);
-      if (idx < 0) return prev;
-      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
-      return next;
-    });
   };
 
   const removeBlock = (blockId: string) => {
@@ -194,6 +206,7 @@ export default function EditWorkoutPage() {
   };
 
   const updateSet = (blockId: string, setId: string, field: "weight" | "reps", value: string) => {
+    if (value !== "" && (field === "weight" ? !/^\d*\.?\d*$/.test(value) : !/^\d*$/.test(value))) return;
     setBlocks((prev) =>
       prev.map((b) =>
         b.id === blockId
@@ -234,33 +247,36 @@ export default function EditWorkoutPage() {
 
   const handleSave = async () => {
     setError("");
+    if (blocks.filter((b) => b.exerciseId).length === 0) {
+      setError("種目を1つ以上追加してください");
+      return;
+    }
     setSaving(true);
     try {
-      // Build nested attributes
       const currentBlockDbIds = blocks.filter((b) => b.exerciseId).map((b) => b.dbId).filter(Boolean) as number[];
 
-      // Mark removed blocks for destruction
       const destroyedBlocks = originalBlockIds
         .filter((dbId) => !currentBlockDbIds.includes(dbId))
         .map((dbId) => ({ id: dbId, _destroy: true }));
 
-      // Build current blocks
       const currentBlocks = blocks
         .filter((block) => block.exerciseId)
         .map((block, i) => {
-          // Mark removed sets for destruction
           const currentSetDbIds = block.sets.map((s) => s.dbId).filter(Boolean) as number[];
           const destroyedSets = block.originalSetIds
             .filter((dbId) => !currentSetDbIds.includes(dbId))
             .map((dbId) => ({ id: dbId, _destroy: true }));
 
-          // Build current sets
-          const currentSets = block.sets.map((s, j) => ({
-            ...(s.dbId ? { id: s.dbId } : {}),
-            set_number: j + 1,
-            weight: s.weight ? parseFloat(s.weight) : null,
-            reps: s.reps ? parseInt(s.reps) : null,
-          }));
+          const currentSets = block.sets.map((s, j) => {
+            const w = s.weight ? parseFloat(s.weight) : null;
+            const r = s.reps ? parseInt(s.reps) : null;
+            return {
+              ...(s.dbId ? { id: s.dbId } : {}),
+              set_number: j + 1,
+              weight: w !== null && Number.isFinite(w) ? w : null,
+              reps: r !== null && Number.isFinite(r) ? r : null,
+            };
+          });
 
           return {
             ...(block.dbId ? { id: block.dbId } : {}),
@@ -282,343 +298,481 @@ export default function EditWorkoutPage() {
         workout_exercises_attributes: [...currentBlocks, ...destroyedBlocks],
       });
 
+      sessionStorage.setItem("flash", "保存しました");
       router.push("/workouts");
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
-    } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (!ready || loading) {
     return (
-      <ProtectedPage title="ワークアウト編集">
-        <div className="flex justify-center py-16">
-          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-        </div>
-      </ProtectedPage>
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
+        <div className="animate-spin h-8 w-8 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
+      </div>
     );
   }
 
   return (
-    <ProtectedPage title="ワークアウト編集">
-      <div className="px-4 py-4 space-y-4">
-        {/* Date */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <label className="block text-sm font-medium text-gray-600 mb-2">日付</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
+    <div className="min-h-screen bg-[#FAFAFA]">
+      {/* Top app bar */}
+      <div className="sticky top-0 z-50 bg-[#FAFAFA] flex items-center justify-between px-1 py-2">
+        <button
+          onClick={() => router.back()}
+          disabled={saving}
+          className="w-11 h-11 rounded-full flex items-center justify-center text-gray-900 disabled:opacity-40"
+          aria-label="戻る"
+        >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <path d="M14 4.5L7.5 11l6.5 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold text-white mr-2
+            bg-[#5b5bf2] shadow-[0_8px_20px_#5b5bf255,0_1px_2px_#5b5bf233] disabled:opacity-80 transition-all"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8.5l3 3 7-7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span>{saving ? "保存中…" : "保存"}</span>
+        </button>
+      </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mx-5 mb-2 px-3 py-2 bg-red-50 text-red-500 text-sm rounded-lg">{error}</div>
+      )}
+
+      {/* Content */}
+      <div className="px-5 pb-8">
+        {/* Header: TRAINING LOG + Date */}
+        <div className="mb-4">
+          <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] mb-1">
+            TRAINING LOG
+          </div>
+          <button
+            onClick={() => setDateOpen(true)}
+            className="inline-flex items-center bg-transparent border-none p-0 cursor-pointer"
+          >
+            <span className="text-[28px] font-bold tracking-tight text-gray-900">
+              {date ? formatDateJP(date) : ""}
+            </span>
+            <svg className="ml-2 text-gray-400 mt-1" width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
 
-        {/* Condition */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-sm font-medium text-gray-600 mb-3">コンディション</p>
-          <div className="grid grid-cols-5 gap-2">
-            {CONDITION_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setCondition(opt.value)}
-                className={`flex flex-col items-center py-2 rounded-xl border-2 transition-all ${
-                  condition === opt.value
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-100 bg-gray-50"
-                }`}
-              >
-                <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-[10px] text-gray-500 mt-0.5">{opt.label}</span>
-              </button>
-            ))}
+        {/* Summary Chips */}
+        <div className="flex gap-2 mb-5">
+          <div className="flex-1 bg-white rounded-[10px] border border-black/[0.08] px-3 py-2.5">
+            <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] mb-0.5">種目</div>
+            <div className="text-[17px] font-bold text-gray-900 font-mono tracking-tight">
+              {blocks.filter((b) => b.exerciseId).length}
+            </div>
+          </div>
+          <div className="flex-1 bg-white rounded-[10px] border border-black/[0.08] px-3 py-2.5">
+            <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] mb-0.5">セット</div>
+            <div className="text-[17px] font-bold text-gray-900 font-mono tracking-tight">{totalSets}</div>
+          </div>
+          <div className="flex-[2] bg-white rounded-[10px] border border-black/[0.08] px-3 py-2.5">
+            <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] mb-0.5">総ボリューム</div>
+            <div className="text-[17px] font-bold text-gray-900 font-mono tracking-tight">
+              {totalVolume.toLocaleString()} kg
+            </div>
           </div>
         </div>
 
-        {/* Time */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-sm font-medium text-gray-600 mb-3">時間（任意）</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">開始</label>
+        {/* SESSION section header */}
+        <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] mb-2">SESSION</div>
+
+        {/* Session Info Card */}
+        <div className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_1px_2px_rgba(15,18,40,0.03)] overflow-hidden mb-5">
+          {/* Condition row */}
+          <div className="px-4 py-4">
+            <div className="text-[11px] font-semibold text-gray-400 tracking-[0.08em] mb-4">
+              コンディション
+            </div>
+            <ConditionScale value={condition} onChange={setCondition} />
+          </div>
+
+          <div className="h-px bg-black/[0.08]" />
+
+          {/* Time row */}
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="w-14 flex-shrink-0">
+              <span className="text-xs font-semibold text-gray-500">時間</span>
+              <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
+            </div>
+            <div className="flex-1 flex items-center gap-2">
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="flex-1 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono
+                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10 min-w-[96px]"
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">終了</label>
+              <span className="text-gray-400 text-sm">→</span>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="flex-1 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono
+                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10 min-w-[96px]"
               />
             </div>
           </div>
-        </div>
 
-        {/* Gym type */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-sm font-medium text-gray-600 mb-3">ジムタイプ（任意）</p>
-          <div className="grid grid-cols-2 gap-2">
-            {GYM_TYPE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setGymType(gymType === opt.value ? "" : opt.value)}
-                className={`py-2 rounded-xl border-2 text-sm transition-all ${
-                  gymType === opt.value
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-medium"
-                    : "border-gray-100 bg-gray-50 text-gray-600"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="h-px bg-black/[0.08]" />
+
+          {/* Gym row */}
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="w-14 flex-shrink-0">
+              <span className="text-xs font-semibold text-gray-500">ジム</span>
+              <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
+            </div>
+            <div className="flex-1 flex flex-wrap gap-1.5">
+              {GYM_TYPE_OPTIONS.map((opt) => {
+                const active = gymType === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setGymType(active ? "" : opt.value)}
+                    className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+                      active
+                        ? "border border-[#5b5bf2] bg-[#5b5bf2]/[0.07] text-[#5b5bf2]"
+                        : "border border-black/[0.08] bg-white text-gray-500"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="h-px bg-black/[0.08]" />
+
+          {/* Memo row */}
+          <div className="flex gap-3 px-4 py-3">
+            <div className="w-14 flex-shrink-0 pt-0.5">
+              <span className="text-xs font-semibold text-gray-500">メモ</span>
+              <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
+            </div>
+            <textarea
+              ref={(el) => {
+                if (el && memo) {
+                  el.style.height = "auto";
+                  el.style.height = `${el.scrollHeight}px`;
+                }
+              }}
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.style.height = "auto";
+                el.style.height = `${el.scrollHeight}px`;
+              }}
+              placeholder="今日の感想など…"
+              rows={3}
+              className="flex-1 resize-none border-none outline-none bg-transparent text-sm text-gray-900 leading-relaxed placeholder:text-gray-400"
+            />
           </div>
         </div>
 
-        {/* Workout memo */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <label className="block text-sm font-medium text-gray-600 mb-2">
-            ワークアウトメモ（任意）
-          </label>
-          <textarea
-            ref={memoRef}
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            onInput={(e) => {
-              const el = e.currentTarget;
-              const scrollY = window.scrollY;
-              el.style.height = "auto";
-              el.style.height = `${el.scrollHeight}px`;
-              window.scrollTo({ top: scrollY });
-            }}
-            placeholder="今日の感想など..."
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
+        {/* EXERCISES section header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em]">EXERCISES</div>
+          {blocks.length > 1 && (
+            <button
+              onClick={() => setReorderMode(!reorderMode)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-all
+                bg-transparent border border-black/[0.08] text-gray-500"
+            >
+              {reorderMode ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8.5l3 3 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>並べ替え完了</span>
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 4h7M3 8h10M3 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                    <path d="M11.5 11l2 2 2-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>並び替え</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
-        {/* Exercise blocks */}
-        {blocks.map((block, blockIndex) => {
-          const exercise = exercises.find((e) => e.id.toString() === block.exerciseId);
-          const lastSets = lastSetsMap[block.id] ?? [];
-          return (
-            <div
-              key={block.id}
-              className={`rounded-2xl shadow-sm overflow-hidden ${
-                block.dbId ? "bg-indigo-50" : "bg-white"
-              }`}
-              ref={(el) => {
-                if (el && focusBlockIdRef.current === block.id) {
-                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                  focusBlockIdRef.current = null;
-                }
+        {reorderMode ? (
+          <>
+            <div className="flex items-center gap-1.5 px-1 pb-2 text-xs text-gray-500">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="text-gray-400">
+                <path d="M4 5h10M4 9h10M4 13h10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+              </svg>
+              <span>ハンドルをドラッグして順序を変更</span>
+            </div>
+            <ReorderList
+              items={blocks.map((b) => ({
+                id: b.id,
+                name: exercises.find((e) => e.id.toString() === b.exerciseId)?.name || "",
+                side: b.side,
+                setsCount: b.sets.length,
+              }))}
+              onReorder={(reordered) => {
+                const idOrder = reordered.map((r) => r.id);
+                setBlocks((prev) => {
+                  const map = new Map(prev.map((b) => [b.id, b]));
+                  return idOrder.map((id) => map.get(id)!);
+                });
               }}
-            >
-              {/* Block header */}
-              <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-center w-5 flex-shrink-0">
-                    <button
-                      onClick={() => moveBlock(block.id, "up")}
-                      disabled={blockIndex === 0}
-                      className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
-                    >
-                      ▲
-                    </button>
-                    <span className="text-xs text-gray-400 font-medium">
-                      {blockIndex + 1}
-                    </span>
-                    <button
-                      onClick={() => moveBlock(block.id, "down")}
-                      disabled={blockIndex === blocks.length - 1}
-                      className="text-gray-300 hover:text-indigo-500 text-sm leading-none transition-colors disabled:opacity-20 disabled:hover:text-gray-300 p-0.5"
-                    >
-                      ▼
-                    </button>
-                  </div>
-                  <select
-                    value={block.exerciseId}
-                    onChange={(e) => handleExerciseChange(block.id, e.target.value)}
-                    className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </>
+        ) : (
+          <>
+            {/* Exercise cards */}
+            <div className="space-y-3">
+              {blocks.map((block) => {
+                const exercise = exercises.find((e) => e.id.toString() === block.exerciseId);
+                const lastSets = lastSetsMap[block.id] ?? [];
+                return (
+                  <div
+                    key={block.id}
+                    className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_1px_2px_rgba(15,18,40,0.03)] p-4"
+                    ref={(el) => {
+                      if (el && focusBlockIdRef.current === block.id) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        focusBlockIdRef.current = null;
+                      }
+                    }}
                   >
-                    <option value="" disabled>種目を選択</option>
-                    {Object.entries(grouped).map(([cat, exs]) => (
-                      <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
-                        {exs.map((ex) => (
-                          <option key={ex.id} value={ex.id}>
-                            {ex.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() =>
-                      exercise && openNoteModal(exercise.id, exercise.name)
-                    }
-                    title="種目メモを編集"
-                    className="text-lg leading-none text-gray-400 hover:text-indigo-500 transition-colors flex-shrink-0"
-                  >
-                    📝
-                  </button>
-                  <button
-                    onClick={() => removeBlock(block.id)}
-                    className="text-gray-300 hover:text-red-400 text-xl leading-none transition-colors flex-shrink-0"
-                  >
-                    ×
-                  </button>
-                </div>
-                {/* Side selector */}
-                <div className="flex items-center gap-2 mt-2 ml-7">
-                  {["左", "右"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={(e) => { updateBlock(block.id, "side", block.side === s ? "" : s); (e.target as HTMLElement).blur(); }}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium focus:outline-none ${
-                        block.side === s
-                          ? "bg-indigo-500 text-white"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Previous sets hint */}
-              {block.exerciseId && lastSets.length > 0 && (
-                <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-                  <p className="text-xs text-gray-400">
-                    前回：{lastSets.map((s) =>
-                      [s.weight ? `${s.weight}kg` : null, s.reps ? `${s.reps}回` : null]
-                        .filter(Boolean).join("×")
-                    ).join(" / ")}
-                  </p>
-                </div>
-              )}
-
-              <div className="px-4 py-3 space-y-3">
-                {/* Exercise memo */}
-                <input
-                  type="text"
-                  value={block.memo}
-                  onChange={(e) => updateBlock(block.id, "memo", e.target.value)}
-                  placeholder="このセッションのメモ（任意）"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-
-                {/* Sets */}
-                <div className="space-y-2">
-                  {block.sets.map((s, setIndex) => (
-                    <div key={s.id} className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 w-8 text-center font-medium flex-shrink-0">
-                        {setIndex + 1}セット
-                      </span>
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          value={s.weight}
-                          onChange={(e) => updateSet(block.id, s.id, "weight", e.target.value)}
-                          placeholder="重量"
-                          min={0}
-                          step={0.5}
-                          className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                          ref={(el) => {
-                            if (el && focusSetIdRef.current === s.id) {
-                              el.focus();
-                              focusSetIdRef.current = null;
-                            }
-                          }}
-                        />
-                        <span className="absolute right-2 top-2.5 text-xs text-gray-400">kg</span>
+                    {/* Header: exercise selector + note + delete */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <div className="flex items-center justify-between py-1 px-1 pointer-events-none">
+                          <span className={`text-[17px] font-semibold tracking-tight ${
+                            exercise ? "text-gray-900" : "text-gray-400"
+                          }`}>
+                            {exercise?.name || "種目を選択"}
+                          </span>
+                          <svg className="text-gray-400" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <select
+                          value={block.exerciseId}
+                          onChange={(e) => handleExerciseChange(block.id, e.target.value)}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                        >
+                          <option value="" disabled>種目を選択</option>
+                          {Object.entries(grouped).map(([cat, exs]) => (
+                            <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
+                              {exs.map((ex) => (
+                                <option key={ex.id} value={ex.id}>{ex.name}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
                       </div>
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          value={s.reps}
-                          onChange={(e) => updateSet(block.id, s.id, "reps", e.target.value)}
-                          placeholder="回数"
-                          min={1}
-                          className="w-full px-2 py-2 pr-7 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        />
-                        <span className="absolute right-2 top-2.5 text-xs text-gray-400">回</span>
-                      </div>
+                      {exercise && (
+                        <button
+                          onClick={() => openNoteModal(exercise.id, exercise.name)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-[#5b5bf2] transition-colors flex-shrink-0"
+                          title="種目メモ"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 3h7l3 3v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                            <path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      )}
                       <button
-                        onClick={() => removeSet(block.id, s.id)}
-                        className="text-gray-300 hover:text-red-400 text-lg leading-none transition-colors flex-shrink-0"
+                        onClick={() => removeBlock(block.id)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors flex-shrink-0"
+                        aria-label="種目を削除"
                       >
-                        ×
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                        </svg>
                       </button>
                     </div>
-                  ))}
-                </div>
 
-                {/* Add set */}
-                <button
-                  onClick={() => addSetToBlock(block.id)}
-                  className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-xs text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
-                >
-                  + セットを追加
-                </button>
-              </div>
+                    {/* Side segment control */}
+                    <div className="mt-2 mb-3">
+                      <div className="inline-flex p-[3px] bg-[#F3F3F6] rounded-[10px] gap-0.5">
+                        {SIDE_OPTIONS.map((opt) => {
+                          const active = block.side === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => updateBlock(block.id, "side", opt.value)}
+                              className={`px-3.5 py-1.5 rounded-lg text-[13px] min-w-[44px] transition-all ${
+                                active
+                                  ? "bg-white text-gray-900 font-semibold shadow-[0_1px_2px_rgba(15,18,40,0.06),0_0_0_0.5px_rgba(15,18,40,0.04)]"
+                                  : "text-gray-500 font-medium"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Previous sets hint */}
+                    {block.exerciseId && lastSets.length > 0 && (
+                      <p className="text-[11px] text-gray-400 px-1 mb-2">
+                        前回: {lastSets.map((s) =>
+                          [s.weight ? `${s.weight}kg` : null, s.reps ? `${s.reps}回` : null]
+                            .filter(Boolean).join("×")
+                        ).join(" / ")}
+                      </p>
+                    )}
+
+                    {/* Exercise memo */}
+                    <div className="flex items-center gap-2 mb-3.5 px-3 py-2.5 bg-[#F3F3F6] rounded-[10px]">
+                      <span className="text-gray-400 flex-shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M3 3h7l3 3v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+                          <path d="M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                        </svg>
+                      </span>
+                      <input
+                        value={block.memo}
+                        onChange={(e) => updateBlock(block.id, "memo", e.target.value)}
+                        placeholder="このセッションのメモ（任意）"
+                        className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 placeholder:text-gray-400 min-w-0"
+                      />
+                    </div>
+
+                    {/* Set rows */}
+                    <div className="flex flex-col gap-2">
+                      {block.sets.map((s, setIndex) => {
+                        const filled = s.weight !== "" || s.reps !== "";
+                        return (
+                          <div key={s.id} className="flex items-center gap-2">
+                            <div
+                              className={`w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center
+                                text-xs font-semibold font-mono transition-all ${
+                                filled
+                                  ? "bg-[#5b5bf2] text-white"
+                                  : "bg-[#F3F3F6] text-gray-400"
+                              }`}
+                            >
+                              {setIndex + 1}
+                            </div>
+                            <div className="flex-1 flex items-center h-11 px-3 border border-black/[0.08] rounded-[10px] bg-white
+                              focus-within:border-[#5b5bf2] focus-within:ring-2 focus-within:ring-[#5b5bf2]/10 transition-all">
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={s.weight}
+                                onChange={(e) => updateSet(block.id, s.id, "weight", e.target.value)}
+                                placeholder="重量"
+                                className="flex-1 border-none outline-none bg-transparent font-mono text-[17px] font-medium
+                                  text-gray-900 tracking-tight w-full placeholder:text-gray-400"
+                                ref={(el) => {
+                                  if (el && focusSetIdRef.current === s.id) {
+                                    el.focus();
+                                    focusSetIdRef.current = null;
+                                  }
+                                }}
+                              />
+                              <span className="text-xs font-medium text-gray-500 ml-1 tracking-wide">kg</span>
+                            </div>
+                            <div className="flex-1 flex items-center h-11 px-3 border border-black/[0.08] rounded-[10px] bg-white
+                              focus-within:border-[#5b5bf2] focus-within:ring-2 focus-within:ring-[#5b5bf2]/10 transition-all">
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={s.reps}
+                                onChange={(e) => updateSet(block.id, s.id, "reps", e.target.value)}
+                                placeholder="回数"
+                                className="flex-1 border-none outline-none bg-transparent font-mono text-[17px] font-medium
+                                  text-gray-900 tracking-tight w-full placeholder:text-gray-400"
+                              />
+                              <span className="text-xs font-medium text-gray-500 ml-1 tracking-wide">回</span>
+                            </div>
+                            <button
+                              onClick={() => removeSet(block.id, s.id)}
+                              className="p-1.5 rounded-md text-gray-400 hover:text-red-400 transition-colors flex-shrink-0"
+                              aria-label="セットを削除"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => addSetToBlock(block.id)}
+                      className="flex items-center justify-center gap-1.5 w-full mt-2.5 py-2.5 px-3 text-[#5b5bf2]
+                        text-sm font-semibold rounded-[10px] transition-colors hover:bg-[#5b5bf2]/5"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+                      </svg>
+                      <span>セットを追加</span>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
 
-        {/* Add exercise block */}
-        <button
-          onClick={addBlock}
-          disabled={exercises.length === 0}
-          className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-sm text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition-colors disabled:opacity-40"
-        >
-          + 種目を追加
-        </button>
-
-        {error && (
-          <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+            {/* Add exercise button */}
+            <button
+              onClick={addBlock}
+              disabled={exercises.length === 0}
+              className="flex items-center justify-center gap-2 w-full mt-3 py-4 bg-white border border-black/[0.08]
+                rounded-[14px] text-[15px] font-semibold text-gray-500 hover:text-[#5b5bf2] hover:border-[#5b5bf2]/30
+                transition-colors disabled:opacity-40"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+              </svg>
+              <span>種目を追加</span>
+            </button>
+          </>
         )}
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-base hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition-colors shadow-sm"
-        >
-          {saving ? "保存中..." : "💾 変更を保存"}
-        </button>
-
-        <button
-          onClick={() => router.back()}
-          className="w-full py-3 text-gray-400 text-sm"
-        >
-          キャンセル
-        </button>
       </div>
+
+      {/* Date picker sheet */}
+      <DatePickerSheet
+        open={dateOpen}
+        value={date}
+        onChange={setDate}
+        onClose={() => setDateOpen(false)}
+      />
 
       {/* Note modal */}
       {noteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">
-                📝 {noteModal.exerciseName}
-              </h3>
+              <h3 className="font-semibold text-gray-800">{noteModal.exerciseName}</h3>
               <button
                 onClick={() => setNoteModal(null)}
-                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                className="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center"
               >
-                ×
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
               </button>
             </div>
-
             {noteModal.loading ? (
               <div className="flex justify-center py-6">
-                <div className="animate-spin h-6 w-6 border-4 border-indigo-600 border-t-transparent rounded-full" />
+                <div className="animate-spin h-6 w-6 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
               </div>
             ) : (
               <textarea
@@ -629,21 +783,22 @@ export default function EditWorkoutPage() {
                 placeholder="この種目に関するメモ（フォームのコツ、重量の目標など）"
                 rows={5}
                 autoFocus
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full px-3 py-2 border border-black/[0.08] rounded-xl text-sm resize-none
+                  focus:outline-none focus:ring-2 focus:ring-[#5b5bf2]/20 focus:border-[#5b5bf2]"
               />
             )}
-
             <div className="flex gap-2">
               <button
                 onClick={() => setNoteModal(null)}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 border border-black/[0.08] rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 キャンセル
               </button>
               <button
                 onClick={saveNote}
                 disabled={noteModal.loading || noteModal.saving}
-                className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="flex-1 py-3 bg-[#5b5bf2] text-white rounded-xl text-sm font-medium
+                  hover:brightness-110 disabled:opacity-50 transition-all"
               >
                 {noteModal.saving ? "保存中..." : "保存"}
               </button>
@@ -651,6 +806,6 @@ export default function EditWorkoutPage() {
           </div>
         </div>
       )}
-    </ProtectedPage>
+    </div>
   );
 }
