@@ -407,21 +407,23 @@ export default function EditWorkoutPage() {
               <span className="text-xs font-semibold text-gray-500">時間</span>
               <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
             </div>
-            <div className="flex-1 flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 min-w-0">
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="flex-1 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono
-                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10 min-w-[96px]"
+                placeholder="開始"
+                className="flex-1 min-w-0 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono text-gray-900
+                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10"
               />
-              <span className="text-gray-400 text-sm">→</span>
+              <span className="text-gray-400 text-sm flex-shrink-0">→</span>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="flex-1 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono
-                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10 min-w-[96px]"
+                placeholder="終了"
+                className="flex-1 min-w-0 px-2.5 py-1.5 border border-black/[0.08] rounded-lg text-sm font-mono text-gray-900
+                  focus:outline-none focus:border-[#5b5bf2] focus:ring-2 focus:ring-[#5b5bf2]/10"
               />
             </div>
           </div>
