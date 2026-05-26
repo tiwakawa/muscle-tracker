@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
-import { exercisesApi, workoutsApi, workoutExercisesApi, workoutSetsApi, exerciseNotesApi } from "@/lib/api";
+import { exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
 
 const CONDITION_OPTIONS = [
@@ -185,35 +185,29 @@ export default function NewWorkoutPage() {
     setError("");
     setSaving(true);
     try {
-      const workout = await workoutsApi.create({
+      const workout_exercises_attributes = blocks
+        .filter((block) => block.exerciseId)
+        .map((block, i) => ({
+          exercise_id: parseInt(block.exerciseId),
+          order: i + 1,
+          memo: block.memo || null,
+          side: block.side || "",
+          workout_sets_attributes: block.sets.map((s, j) => ({
+            set_number: j + 1,
+            weight: s.weight ? parseFloat(s.weight) : null,
+            reps: s.reps ? parseInt(s.reps) : null,
+          })),
+        }));
+
+      await workoutsApi.create({
         date,
         condition,
         memo: memo || undefined,
         start_time: startTime || undefined,
         end_time: endTime || undefined,
         gym_type: gymType || undefined,
+        workout_exercises_attributes,
       });
-
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
-        if (!block.exerciseId) continue;
-
-        const we = await workoutExercisesApi.create(workout.id, {
-          exercise_id: parseInt(block.exerciseId),
-          order: i + 1,
-          memo: block.memo,
-          side: block.side || undefined,
-        });
-
-        for (let j = 0; j < block.sets.length; j++) {
-          const s = block.sets[j];
-          await workoutSetsApi.create(workout.id, we.id, {
-            set_number: j + 1,
-            weight: s.weight ? parseFloat(s.weight) : undefined,
-            reps: s.reps ? parseInt(s.reps) : undefined,
-          });
-        }
-      }
 
       router.push("/workouts");
     } catch (e) {

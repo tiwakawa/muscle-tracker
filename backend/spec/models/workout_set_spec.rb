@@ -47,10 +47,10 @@ RSpec.describe WorkoutSet, type: :model do
     end
   end
 
-  describe "before_validation callback" do
+  describe "before_create callback" do
     it "sets workout_id from workout_exercise" do
       workout_set = build(:workout_set, workout_exercise: workout_exercise)
-      workout_set.valid?
+      workout_set.save!
       expect(workout_set.workout_id).to eq(workout_exercise.workout_id)
     end
   end

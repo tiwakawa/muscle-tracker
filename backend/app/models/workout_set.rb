@@ -1,7 +1,7 @@
 class WorkoutSet < ApplicationRecord
   belongs_to :workout_exercise
 
-  before_validation :set_workout_id
+  before_create :set_workout_id
 
   validates :set_number, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :weight, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true

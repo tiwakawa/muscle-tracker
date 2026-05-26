@@ -43,7 +43,13 @@ module Api
       end
 
       def workout_params
-        params.require(:workout).permit(:date, :condition, :memo, :start_time, :end_time, :gym_type)
+        params.require(:workout).permit(
+          :date, :condition, :memo, :start_time, :end_time, :gym_type,
+          workout_exercises_attributes: [
+            :id, :exercise_id, :order, :memo, :side, :_destroy,
+            workout_sets_attributes: [:id, :set_number, :weight, :reps, :_destroy]
+          ]
+        )
       end
 
       def workout_as_json(workout)

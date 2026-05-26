@@ -46,6 +46,28 @@ RSpec.describe "Workouts API", type: :request do
       expect(body["gym_type"]).to eq("anytime")
     end
 
+    it "creates a workout with nested exercises and sets" do
+      exercise = create(:exercise)
+      post "/api/v1/workouts",
+        params: { workout: {
+          date: "2026-03-01", condition: 4,
+          workout_exercises_attributes: [{
+            exercise_id: exercise.id, order: 1, side: "右",
+            workout_sets_attributes: [
+              { set_number: 1, weight: 60.0, reps: 10 },
+              { set_number: 2, weight: 60.0, reps: 8 }
+            ]
+          }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["workout_exercises"].length).to eq(1)
+      expect(body["workout_exercises"][0]["side"]).to eq("右")
+      expect(body["workout_exercises"][0]["workout_sets"].length).to eq(2)
+    end
+
     it "returns 422 when date is missing" do
       post "/api/v1/workouts",
         params: { workout: { condition: 3 } }.to_json,
@@ -109,6 +131,60 @@ RSpec.describe "Workouts API", type: :request do
       expect(body["start_time"]).to eq("09:00")
       expect(body["end_time"]).to eq("10:30")
       expect(body["gym_type"]).to eq("anytime")
+    end
+
+    it "updates with nested exercises and sets" do
+      exercise = create(:exercise)
+      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+      ws = create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: {
+          workout_exercises_attributes: [{
+            id: we.id, exercise_id: exercise.id, order: 1,
+            workout_sets_attributes: [
+              { id: ws.id, set_number: 1, weight: 55.0, reps: 8 }
+            ]
+          }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["workout_exercises"][0]["workout_sets"][0]["weight"].to_f).to eq(55.0)
+    end
+
+    it "destroys nested exercise via _destroy" do
+      exercise = create(:exercise)
+      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+      create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: {
+          workout_exercises_attributes: [{ id: we.id, _destroy: true }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(WorkoutExercise.find_by(id: we.id)).to be_nil
+    end
+
+    it "destroys nested workout_set via _destroy" do
+      exercise = create(:exercise)
+      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+      ws = create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: {
+          workout_exercises_attributes: [{
+            id: we.id, exercise_id: exercise.id, order: 1,
+            workout_sets_attributes: [{ id: ws.id, _destroy: true }]
+          }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(WorkoutSet.find_by(id: ws.id)).to be_nil
     end
 
     it "clears start_time, end_time, gym_type when sent as null" do

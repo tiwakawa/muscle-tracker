@@ -118,6 +118,17 @@ export const workoutsApi = {
     start_time?: string;
     end_time?: string;
     gym_type?: string;
+    workout_exercises_attributes?: {
+      exercise_id: number;
+      order: number;
+      memo?: string | null;
+      side?: string;
+      workout_sets_attributes?: {
+        set_number: number;
+        weight?: number | null;
+        reps?: number | null;
+      }[];
+    }[];
   }) => request<Workout>("POST", "/api/v1/workouts", { workout: data }),
   update: (
     id: number,
@@ -128,6 +139,21 @@ export const workoutsApi = {
       start_time: string | null;
       end_time: string | null;
       gym_type: string | null;
+      workout_exercises_attributes: {
+        id?: number;
+        exercise_id?: number;
+        order?: number;
+        memo?: string | null;
+        side?: string;
+        _destroy?: boolean;
+        workout_sets_attributes?: {
+          id?: number;
+          set_number?: number;
+          weight?: number | null;
+          reps?: number | null;
+          _destroy?: boolean;
+        }[];
+      }[];
     }>
   ) => request<Workout>("PUT", `/api/v1/workouts/${id}`, { workout: data }),
   delete: (id: number) => request<void>("DELETE", `/api/v1/workouts/${id}`),

@@ -4,6 +4,8 @@ class Workout < ApplicationRecord
   has_many :workout_sets, through: :workout_exercises
   has_many :ai_advices, dependent: :destroy
 
+  accepts_nested_attributes_for :workout_exercises, allow_destroy: true
+
   GYM_TYPES = %w[anytime personal home municipal].freeze
 
   validates :date, presence: true

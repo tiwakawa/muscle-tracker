@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ProtectedPage from "@/components/ProtectedPage";
-import { exercisesApi, workoutsApi, workoutExercisesApi, workoutSetsApi, exerciseNotesApi } from "@/lib/api";
+import { exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
 
 const CONDITION_OPTIONS = [
@@ -236,83 +236,51 @@ export default function EditWorkoutPage() {
     setError("");
     setSaving(true);
     try {
-      // 1. Update workout
-      const workoutPayload = {
+      // Build nested attributes
+      const currentBlockDbIds = blocks.filter((b) => b.exerciseId).map((b) => b.dbId).filter(Boolean) as number[];
+
+      // Mark removed blocks for destruction
+      const destroyedBlocks = originalBlockIds
+        .filter((dbId) => !currentBlockDbIds.includes(dbId))
+        .map((dbId) => ({ id: dbId, _destroy: true }));
+
+      // Build current blocks
+      const currentBlocks = blocks
+        .filter((block) => block.exerciseId)
+        .map((block, i) => {
+          // Mark removed sets for destruction
+          const currentSetDbIds = block.sets.map((s) => s.dbId).filter(Boolean) as number[];
+          const destroyedSets = block.originalSetIds
+            .filter((dbId) => !currentSetDbIds.includes(dbId))
+            .map((dbId) => ({ id: dbId, _destroy: true }));
+
+          // Build current sets
+          const currentSets = block.sets.map((s, j) => ({
+            ...(s.dbId ? { id: s.dbId } : {}),
+            set_number: j + 1,
+            weight: s.weight ? parseFloat(s.weight) : null,
+            reps: s.reps ? parseInt(s.reps) : null,
+          }));
+
+          return {
+            ...(block.dbId ? { id: block.dbId } : {}),
+            exercise_id: parseInt(block.exerciseId),
+            order: i + 1,
+            memo: block.memo || null,
+            side: block.side || "",
+            workout_sets_attributes: [...currentSets, ...destroyedSets],
+          };
+        });
+
+      await workoutsApi.update(workoutId, {
         date,
         condition,
         memo: memo || null,
         start_time: startTime || null,
         end_time: endTime || null,
         gym_type: gymType || null,
-      };
-      console.log("[handleSave] workout payload:", workoutPayload);
-      await workoutsApi.update(workoutId, workoutPayload);
-
-      // 2. Delete removed exercise blocks (cascades to sets)
-      const currentBlockDbIds = blocks.map((b) => b.dbId).filter(Boolean) as number[];
-      for (const dbId of originalBlockIds) {
-        if (!currentBlockDbIds.includes(dbId)) {
-          await workoutExercisesApi.delete(workoutId, dbId);
-        }
-      }
-
-      // 3. Save each exercise block
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
-        let weId: number;
-
-        if (block.dbId) {
-          // Update existing workout_exercise
-          await workoutExercisesApi.update(workoutId, block.dbId, {
-            exercise_id: parseInt(block.exerciseId),
-            order: i + 1,
-            memo: block.memo,
-            side: block.side,
-          });
-          weId = block.dbId;
-
-          // Delete removed sets
-          const currentSetDbIds = block.sets.map((s) => s.dbId).filter(Boolean) as number[];
-          for (const dbId of block.originalSetIds) {
-            if (!currentSetDbIds.includes(dbId)) {
-              await workoutSetsApi.delete(workoutId, weId, dbId);
-            }
-          }
-
-          // Update / create sets
-          for (let j = 0; j < block.sets.length; j++) {
-            const s = block.sets[j];
-            const payload = {
-              set_number: j + 1,
-              weight: s.weight ? parseFloat(s.weight) : undefined,
-              reps: s.reps ? parseInt(s.reps) : undefined,
-            };
-            if (s.dbId) {
-              await workoutSetsApi.update(workoutId, weId, s.dbId, payload);
-            } else {
-              await workoutSetsApi.create(workoutId, weId, payload);
-            }
-          }
-        } else {
-          // Create new workout_exercise
-          const we = await workoutExercisesApi.create(workoutId, {
-            exercise_id: parseInt(block.exerciseId),
-            order: i + 1,
-            memo: block.memo,
-            side: block.side || undefined,
-          });
-          weId = we.id;
-
-          for (let j = 0; j < block.sets.length; j++) {
-            const s = block.sets[j];
-            await workoutSetsApi.create(workoutId, weId, {
-              set_number: j + 1,
-              weight: s.weight ? parseFloat(s.weight) : undefined,
-              reps: s.reps ? parseInt(s.reps) : undefined,
-            });
-          }
-        }
-      }
+        workout_exercises_attributes: [...currentBlocks, ...destroyedBlocks],
+      });
 
       router.push("/workouts");
     } catch (e) {

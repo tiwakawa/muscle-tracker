@@ -6,4 +6,6 @@ class WorkoutExercise < ApplicationRecord
   validates :order, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :side, inclusion: { in: %w[左 右] }, allow_blank: true
   validates :exercise_id, uniqueness: { scope: [:workout_id, :side] }
+
+  accepts_nested_attributes_for :workout_sets, allow_destroy: true
 end
