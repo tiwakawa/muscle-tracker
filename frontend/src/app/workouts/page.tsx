@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
@@ -35,6 +35,7 @@ const SORT_LABELS: Record<string, string> = {
   newest: "新しい順",
   oldest: "古い順",
   volume: "ボリューム順",
+  sets: "セット数順",
   duration: "時間順",
 };
 
@@ -113,6 +114,7 @@ export default function WorkoutsPage() {
       newest: (a, b) => b.date.localeCompare(a.date),
       oldest: (a, b) => a.date.localeCompare(b.date),
       volume: (a, b) => calcVolume(b) - calcVolume(a),
+      sets: (a, b) => calcSets(b) - calcSets(a),
       duration: (a, b) => calcDuration(b) - calcDuration(a),
     };
     return [...list].sort(sorters[sortBy] ?? sorters.newest);
@@ -379,6 +381,15 @@ function WorkoutCard({
   onDelete: () => void;
 }) {
   const [memoExpanded, setMemoExpanded] = useState(false);
+  const [memoTruncated, setMemoTruncated] = useState(false);
+  const memoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = memoRef.current;
+    if (el && !memoExpanded) {
+      setMemoTruncated(el.scrollHeight > el.clientHeight);
+    }
+  }, [w.memo, memoExpanded]);
 
   const d = new Date(w.date + "T00:00:00");
   const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
@@ -571,6 +582,7 @@ function WorkoutCard({
       {w.memo && (
         <div className="border-t border-black/[0.08] px-3.5 py-2.5 pb-3">
           <div
+            ref={memoRef}
             className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap"
             style={
               !memoExpanded
@@ -585,7 +597,7 @@ function WorkoutCard({
           >
             {w.memo}
           </div>
-          {w.memo.length > 60 && (
+          {(memoTruncated || memoExpanded) && (
             <button
               onClick={(e) => { e.stopPropagation(); setMemoExpanded(!memoExpanded); }}
               className="mt-1 text-[11px] font-semibold tracking-wide border-none bg-transparent cursor-pointer p-0"
