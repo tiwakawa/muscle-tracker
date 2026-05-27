@@ -9,11 +9,6 @@ import type { Exercise, Workout } from "@/lib/types";
 
 const ACCENT = "#5b5bf2";
 
-const CATEGORY_JP: Record<string, string> = {
-  chest: "胸", back: "背中", shoulders: "肩", arms: "腕",
-  legs: "脚", core: "腹・体幹", cardio: "有酸素", other: "その他",
-};
-
 const METRICS = [
   { key: "max_weight", label: "最大重量" },
   { key: "volume", label: "総ボリューム" },
