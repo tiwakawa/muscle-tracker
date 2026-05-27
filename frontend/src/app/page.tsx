@@ -40,7 +40,7 @@ function calcStreakWeeks(workouts: Workout[]): number {
   const weekSet = new Set(workouts.map((w) => getISOWeekKey(new Date(w.date + "T00:00:00"))));
   const now = new Date();
   let streak = 0;
-  let checkDate = new Date(now);
+  const checkDate = new Date(now);
   // Start from current week, go backwards
   for (let i = 0; i < 200; i++) {
     const key = getISOWeekKey(checkDate);
