@@ -64,16 +64,24 @@ export default function GraphChart({ data, unit, accent }: Props) {
           }}
         />
         <Tooltip
-          contentStyle={{
-            background: "#fff",
-            border: "1px solid rgba(15,18,40,0.08)",
-            borderRadius: 10,
-            boxShadow: "0 4px 12px rgba(15,18,40,0.1)",
-            fontSize: 12,
-            fontFamily: "'JetBrains Mono', monospace",
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null;
+            const val = payload[0].value as number;
+            return (
+              <div style={{
+                background: "#fff",
+                border: "1px solid rgba(15,18,40,0.08)",
+                borderRadius: 10,
+                boxShadow: "0 4px 12px rgba(15,18,40,0.1)",
+                padding: "6px 10px",
+                fontSize: 12,
+                fontFamily: "'JetBrains Mono', monospace",
+              }}>
+                <div style={{ fontSize: 10, color: "rgb(156 163 175)", marginBottom: 2 }}>{label}</div>
+                <div style={{ fontWeight: 700 }}>{val.toLocaleString()} {unit}</div>
+              </div>
+            );
           }}
-          formatter={(value: number | undefined) => [`${(value ?? 0).toLocaleString()} ${unit}`, ""]}
-          labelFormatter={(label) => String(label)}
         />
         <Area
           type="monotone"
@@ -83,6 +91,7 @@ export default function GraphChart({ data, unit, accent }: Props) {
           fill="url(#graphFill)"
           dot={{ r: 2.5, fill: accent, strokeWidth: 0 }}
           activeDot={{ r: 4, fill: accent, strokeWidth: 0 }}
+          animationDuration={400}
         />
         {/* PR marker */}
         {prPoint && (

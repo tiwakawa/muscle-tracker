@@ -9,6 +9,11 @@ import type { Exercise, Workout } from "@/lib/types";
 
 const ACCENT = "#5b5bf2";
 
+const CATEGORY_JP: Record<string, string> = {
+  chest: "胸", back: "背中", shoulders: "肩", arms: "腕",
+  legs: "脚", core: "腹・体幹", cardio: "有酸素", other: "その他",
+};
+
 const METRICS = [
   { key: "max_weight", label: "最大重量" },
   { key: "volume", label: "総ボリューム" },
@@ -20,7 +25,7 @@ const PERIODS = [
   { key: "3M", label: "3M", months: 3 },
   { key: "6M", label: "6M", months: 6 },
   { key: "1Y", label: "1Y", months: 12 },
-  { key: "all", label: "全", months: 0 },
+  { key: "all", label: "ALL", months: 0 },
 ];
 
 // Dynamic import for recharts (SSR disabled)
@@ -45,12 +50,13 @@ interface ExerciseOption {
   name: string;
   side: string;
   label: string;
+  category: string;
   isBodyweight: boolean;
 }
 
 function buildOptions(workouts: Workout[], exercises: Exercise[]): ExerciseOption[] {
   const exMap = new Map(exercises.map((e) => [e.id, e]));
-  const seen = new Map<string, { exerciseId: number; name: string; side: string; hasWeight: boolean }>();
+  const seen = new Map<string, { exerciseId: number; name: string; side: string; category: string; hasWeight: boolean }>();
 
   for (const w of workouts) {
     for (const we of w.workout_exercises ?? []) {
@@ -63,7 +69,7 @@ function buildOptions(workouts: Workout[], exercises: Exercise[]): ExerciseOptio
       if (existing) {
         if (hasWeight) existing.hasWeight = true;
       } else {
-        seen.set(key, { exerciseId: we.exercise_id, name: ex.name, side, hasWeight });
+        seen.set(key, { exerciseId: we.exercise_id, name: ex.name, side, category: ex.category, hasWeight });
       }
     }
   }
@@ -92,13 +98,19 @@ function buildOptions(workouts: Workout[], exercises: Exercise[]): ExerciseOptio
       name: v.name,
       side: v.side,
       label,
+      category: v.category,
       isBodyweight: !v.hasWeight,
     });
   });
 
-  // Sort by name, then side: both → left → right
+  // Sort by category → name → side (both → left → right)
+  const catOrder = ["chest", "back", "shoulders", "arms", "legs", "core", "cardio", "other"];
   const sideOrder: Record<string, number> = { "": 0, "both": 0, "左": 1, "右": 2 };
-  options.sort((a, b) => a.name.localeCompare(b.name) || (sideOrder[a.side] ?? 3) - (sideOrder[b.side] ?? 3));
+  options.sort((a, b) =>
+    (catOrder.indexOf(a.category) - catOrder.indexOf(b.category))
+    || a.name.localeCompare(b.name)
+    || (sideOrder[a.side] ?? 3) - (sideOrder[b.side] ?? 3)
+  );
   return options;
 }
 
@@ -337,25 +349,23 @@ export default function GraphsPage() {
               {/* vs Start */}
               <div className="text-right">
                 <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] mb-1">vs 開始時</div>
-                {vsStart !== null ? (
+                {vsStart !== null && vsStartAbs !== null ? (
                   <>
                     <div className="flex items-baseline gap-1 justify-end">
                       <span className="font-mono text-[22px] font-bold tracking-tighter leading-none" style={{ color: "oklch(0.42 0.12 145)" }}>
-                        {vsStart >= 0 ? "+" : ""}{vsStart}
+                        {vsStartAbs >= 0 ? "+" : ""}{vsStartAbs}
                       </span>
-                      <span className="text-[11px] font-medium text-gray-500">%</span>
+                      <span className="text-[11px] font-medium text-gray-500">{unit}</span>
                     </div>
-                    {vsStartAbs !== null && (
-                      <div className="inline-flex items-center gap-0.5 mt-1 text-[10px] font-bold" style={{ color: "oklch(0.5 0.12 145)" }}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path d={vsStartAbs >= 0
-                            ? "M2 8.5L5 5.5l2 1.5L10 4M10 4h-2.5M10 4v2.5"
-                            : "M2 3.5L5 6.5l2-1.5L10 8M10 8h-2.5M10 8V5.5"
-                          } stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span className="font-mono">{vsStartAbs >= 0 ? "+" : ""}{vsStartAbs} {unit}</span>
-                      </div>
-                    )}
+                    <div className="inline-flex items-center gap-0.5 mt-1 text-[10px] font-bold justify-end" style={{ color: "oklch(0.5 0.12 145)" }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d={vsStartAbs >= 0
+                          ? "M2 8.5L5 5.5l2 1.5L10 4M10 4h-2.5M10 4v2.5"
+                          : "M2 3.5L5 6.5l2-1.5L10 8M10 8h-2.5M10 8V5.5"
+                        } stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span className="font-mono">{vsStart >= 0 ? "+" : ""}{vsStart}%</span>
+                    </div>
                   </>
                 ) : (
                   <span className="text-[11px] text-gray-400">—</span>
@@ -398,8 +408,7 @@ export default function GraphsPage() {
               </div>
             ) : filteredPoints.length === 1 ? (
               <div className="py-12 text-center">
-                <div className="font-mono text-[28px] font-bold text-gray-900 mb-1">{filteredPoints[0].value.toLocaleString()} {unit}</div>
-                <div className="text-xs text-gray-400">データを蓄積中</div>
+                <div className="text-sm text-gray-400">データを蓄積中</div>
               </div>
             ) : (
               <GraphChart data={filteredPoints} unit={unit} accent={ACCENT} />
@@ -421,27 +430,38 @@ export default function GraphsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] mb-3">種目を選択</div>
-            <div className="flex flex-col gap-1">
-              {options.map((opt) => {
-                const isActive = opt.key === selectedKey;
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => { setSelectedKey(opt.key); setPickerOpen(false); }}
-                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left text-sm ${
-                      isActive ? "font-bold" : "font-medium"
-                    }`}
-                    style={{ color: isActive ? ACCENT : undefined }}
-                  >
-                    <span>{opt.label}</span>
-                    {isActive && (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M3 7.5l2.5 2.5L11 4" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col gap-0.5">
+              {(() => {
+                let lastCat = "";
+                return options.map((opt) => {
+                  const isActive = opt.key === selectedKey;
+                  const showCat = opt.category !== lastCat;
+                  lastCat = opt.category;
+                  return (
+                    <div key={opt.key}>
+                      {showCat && (
+                        <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] px-3 pt-3 pb-1">
+                          {CATEGORY_JP[opt.category] ?? opt.category}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => { setSelectedKey(opt.key); setPickerOpen(false); }}
+                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left text-sm ${
+                          isActive ? "font-bold" : "font-medium"
+                        }`}
+                        style={{ color: isActive ? ACCENT : undefined }}
+                      >
+                        <span>{opt.label}</span>
+                        {isActive && (
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M3 7.5l2.5 2.5L11 4" stroke={ACCENT} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
