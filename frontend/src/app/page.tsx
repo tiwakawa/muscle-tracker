@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import ProtectedPage from "@/components/ProtectedPage";
+import { useRouter } from "next/navigation";
+import { getTokens, workoutsApi } from "@/lib/api";
+import BottomNav from "@/components/BottomNav";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
-import { workoutsApi } from "@/lib/api";
 import type { Workout } from "@/lib/types";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const now = new Date();
@@ -14,11 +17,20 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
 
   useEffect(() => {
+    if (!getTokens()) {
+      router.replace("/login");
+    } else {
+      setReady(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
     workoutsApi.list()
       .then(setWorkouts)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [ready]);
 
   const monthPrefix = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
   const monthlyWorkouts = useMemo(
@@ -34,8 +46,21 @@ export default function DashboardPage() {
     .map((t) => ({ ...t, count: monthlyWorkouts.filter((w) => w.gym_type === t.key).length }))
     .filter((t) => t.count > 0);
 
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
+        <div className="animate-spin h-8 w-8 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
-    <ProtectedPage title="ホーム">
+    <div className="min-h-screen bg-[#FAFAFA] pb-20">
+      {/* Top app bar */}
+      <div className="sticky top-0 z-50 bg-[#FAFAFA] flex items-center px-5 h-[60px]">
+        <span className="text-xl font-bold text-gray-900 tracking-tight">ホーム</span>
+      </div>
+
       <div className="px-4 py-4 space-y-5">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
@@ -71,8 +96,9 @@ export default function DashboardPage() {
           loading={loading}
           onMonthChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
         />
-
       </div>
-    </ProtectedPage>
+
+      <BottomNav />
+    </div>
   );
 }

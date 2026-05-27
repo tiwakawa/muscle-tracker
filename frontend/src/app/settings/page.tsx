@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import ProtectedPage from "@/components/ProtectedPage";
-import { userSettingsApi, exportApi, clearTokens } from "@/lib/api";
+import { getTokens, userSettingsApi, exportApi, clearTokens } from "@/lib/api";
+import BottomNav from "@/components/BottomNav";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState("");
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,12 +22,21 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    if (!getTokens()) {
+      router.replace("/login");
+    } else {
+      setReady(true);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
     userSettingsApi.get().then((data) => {
       setDefaultPrompt(data.default_system_prompt);
       setSystemPrompt(data.system_prompt ?? data.default_system_prompt);
       setLoading(false);
     });
-  }, []);
+  }, [ready]);
 
   const handleReset = () => {
     if (!confirm("デフォルトのプロンプトに戻しますか？\n（保存はされません）")) return;
@@ -65,18 +75,31 @@ export default function SettingsPage() {
     }
   };
 
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#FAFAFA]">
+        <div className="animate-spin h-8 w-8 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
-    <ProtectedPage title="設定">
+    <div className="min-h-screen bg-[#FAFAFA] pb-20">
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl shadow-lg text-sm text-white transition-all ${
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-xl shadow-lg text-sm text-white transition-all ${
             toast.type === "success" ? "bg-green-500" : "bg-red-500"
           }`}
         >
           {toast.text}
         </div>
       )}
+
+      {/* Top app bar */}
+      <div className="sticky top-0 z-50 bg-[#FAFAFA] flex items-center px-5 h-[60px]">
+        <span className="text-xl font-bold text-gray-900 tracking-tight">設定</span>
+      </div>
 
       <div className="p-4 max-w-2xl mx-auto">
         <div className="mb-2">
@@ -89,7 +112,7 @@ export default function SettingsPage() {
           <div className="h-48 bg-gray-100 rounded animate-pulse" />
         ) : (
           <textarea
-            className="w-full border border-gray-300 rounded-lg p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full border border-gray-300 rounded-lg p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#5b5bf2]/40 resize-none"
             rows={10}
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
@@ -111,7 +134,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={loading || saving}
-            className="px-6 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="px-6 py-2 text-sm bg-[#5b5bf2] text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
           >
             {saving ? "保存中..." : "保存"}
           </button>
@@ -122,7 +145,7 @@ export default function SettingsPage() {
           <button
             onClick={handleExport}
             disabled={exportState === "exporting"}
-            className="px-6 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="px-6 py-2 text-sm bg-[#5b5bf2] text-white rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
           >
             {exportState === "exporting" ? "同期中..." : "データを同期"}
           </button>
@@ -131,7 +154,7 @@ export default function SettingsPage() {
               href={exportUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block mt-2 text-sm text-indigo-600 underline"
+              className="block mt-2 text-sm text-[#5b5bf2] underline"
             >
               Google Sheetsで確認する →
             </a>
@@ -147,6 +170,8 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
-    </ProtectedPage>
+
+      <BottomNav />
+    </div>
   );
 }
