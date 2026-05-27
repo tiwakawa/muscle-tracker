@@ -425,11 +425,14 @@ export default function GraphsPage() {
           onClick={() => setPickerOpen(false)}
         >
           <div
-            className="bg-white w-full rounded-t-[20px] px-5 pt-6 pb-8 max-h-[70%] overflow-auto"
+            className="bg-white w-full rounded-t-[20px] max-h-[70%] flex flex-col"
             style={{ animation: "slideUp 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em] mb-3">種目を選択</div>
+            <div className="px-5 pt-6 pb-2 flex-shrink-0">
+              <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em]">種目を選択</div>
+            </div>
+            <div className="px-5 pb-8 overflow-y-auto overscroll-contain flex-1">
             <div className="flex flex-col gap-0.5">
               {(() => {
                 let lastCat = "";
@@ -462,6 +465,7 @@ export default function GraphsPage() {
                   );
                 });
               })()}
+            </div>
             </div>
           </div>
         </div>
