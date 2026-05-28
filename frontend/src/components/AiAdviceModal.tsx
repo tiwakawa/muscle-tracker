@@ -16,6 +16,7 @@ interface Props {
 
 export default function AiAdviceModal({ workout, onClose }: Props) {
   const [advice, setAdvice] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -24,12 +25,13 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
     setTimeout(() => setToast(null), 2000);
   };
 
-  // Check for existing advice silently (no loading UI)
+  // Check for existing advice
   useEffect(() => {
     aiAdviceApi
       .get(workout.id)
       .then((data) => setAdvice(data.content))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setChecking(false));
   }, [workout.id]);
 
   const handleGenerate = async () => {
@@ -96,8 +98,18 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
 
         {/* Content (scrollable) */}
         <div className="flex-1 overflow-y-auto px-5 min-h-[240px]">
+          {/* Checking for existing advice */}
+          {checking && (
+            <div className="flex flex-col items-center text-center py-8">
+              <div className="flex justify-center mb-6">
+                <div className="animate-spin h-8 w-8 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
+              </div>
+              <div className="text-sm font-semibold text-gray-500">確認中...</div>
+            </div>
+          )}
+
           {/* Empty / default state */}
-          {!isResultState && !generating && (
+          {!isResultState && !generating && !checking && (
             <div className="flex flex-col items-center text-center py-8">
               <div
                 className="w-[72px] h-[72px] rounded-3xl flex items-center justify-center mb-5"
@@ -182,7 +194,7 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
 
         {/* Sticky actions */}
         <div className="flex-shrink-0 border-t border-black/[0.08] px-5 py-4 bg-white">
-          {!isResultState && !generating && (
+          {!isResultState && !generating && !checking && (
             <div className="flex flex-col gap-2.5">
               <button
                 onClick={handleGenerate}
