@@ -16,7 +16,6 @@ interface Props {
 
 export default function AiAdviceModal({ workout, onClose }: Props) {
   const [advice, setAdvice] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -25,12 +24,12 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
     setTimeout(() => setToast(null), 2000);
   };
 
+  // Check for existing advice silently (no loading UI)
   useEffect(() => {
     aiAdviceApi
       .get(workout.id)
       .then((data) => setAdvice(data.content))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, [workout.id]);
 
   const handleGenerate = async () => {
@@ -56,9 +55,7 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
     showToast("アドバイスをコピーしました");
   };
 
-  const isEmptyState = !loading && !advice && !generating;
-  const isLoadingState = loading || generating;
-  const isResultState = !loading && !generating && !!advice;
+  const isResultState = !!advice && !generating;
 
   return (
     <div
@@ -99,8 +96,8 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
 
         {/* Content (scrollable) */}
         <div className="flex-1 overflow-y-auto px-5 min-h-[240px]">
-          {/* Empty state */}
-          {isEmptyState && (
+          {/* Empty / default state */}
+          {!isResultState && !generating && (
             <div className="flex flex-col items-center text-center py-8">
               <div
                 className="w-[72px] h-[72px] rounded-3xl flex items-center justify-center mb-5"
@@ -119,18 +116,11 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
             </div>
           )}
 
-          {/* Loading state */}
-          {isLoadingState && (
+          {/* Generating state */}
+          {generating && (
             <div className="flex flex-col items-center text-center py-8">
-              <div
-                className="w-[72px] h-[72px] rounded-3xl flex items-center justify-center mb-5 animate-pulse"
-                style={{
-                  background: "linear-gradient(135deg, oklch(0.85 0.08 270), oklch(0.78 0.12 280))",
-                }}
-              >
-                <svg width="32" height="32" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1.2l1.4 3.8L12.2 6.4 8.4 7.8 7 11.7 5.6 7.8 1.8 6.4l3.8-1.4L7 1.2z" fill="white"/>
-                </svg>
+              <div className="flex justify-center mb-6">
+                <div className="animate-spin h-8 w-8 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
               </div>
               <div className="text-sm font-semibold text-gray-500 mb-6">分析中...</div>
               {/* Shimmer skeleton */}
@@ -191,8 +181,8 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
         </div>
 
         {/* Sticky actions */}
-        <div className="flex-shrink-0 border-t border-black/[0.08] px-5 py-4 bg-white rounded-b-none">
-          {isEmptyState && (
+        <div className="flex-shrink-0 border-t border-black/[0.08] px-5 py-4 bg-white">
+          {!isResultState && !generating && (
             <div className="flex flex-col gap-2.5">
               <button
                 onClick={handleGenerate}
@@ -223,7 +213,7 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
             </div>
           )}
 
-          {isLoadingState && (
+          {generating && (
             <button
               disabled
               className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight
