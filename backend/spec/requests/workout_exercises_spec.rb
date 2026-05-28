@@ -105,12 +105,24 @@ RSpec.describe "WorkoutExercises API", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it "deletes the workout_exercise" do
+    it "deletes the workout_exercise when others remain" do
+      create(:workout_exercise, workout: workout, exercise: create(:exercise), order: 2)
+
       delete "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}",
         headers: headers
 
       expect(response).to have_http_status(:no_content)
       expect(WorkoutExercise.find_by(id: workout_exercise.id)).to be_nil
+    end
+
+    it "returns 422 when deleting the last exercise" do
+      # Delete all except the target, then try to delete the last one
+      workout.workout_exercises.where.not(id: workout_exercise.id).destroy_all
+
+      delete "/api/v1/workouts/#{workout.id}/workout_exercises/#{workout_exercise.id}",
+        headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "returns 404 for another user's workout" do

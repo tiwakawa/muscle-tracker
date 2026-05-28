@@ -24,8 +24,12 @@ RSpec.describe "Workouts API", type: :request do
 
   describe "POST /api/v1/workouts" do
     it "creates a workout with valid params" do
+      exercise = create(:exercise)
       post "/api/v1/workouts",
-        params: { workout: { date: "2026-03-01", condition: 4, memo: "Great" } }.to_json,
+        params: { workout: {
+          date: "2026-03-01", condition: 4, memo: "Great",
+          workout_exercises_attributes: [{ exercise_id: exercise.id, order: 1 }]
+        } }.to_json,
         headers: headers
 
       expect(response).to have_http_status(:created)
@@ -35,8 +39,12 @@ RSpec.describe "Workouts API", type: :request do
     end
 
     it "creates a workout with start_time, end_time, and gym_type" do
+      exercise = create(:exercise)
       post "/api/v1/workouts",
-        params: { workout: { date: "2026-03-01", start_time: "09:00", end_time: "10:30", gym_type: "anytime" } }.to_json,
+        params: { workout: {
+          date: "2026-03-01", start_time: "09:00", end_time: "10:30", gym_type: "anytime",
+          workout_exercises_attributes: [{ exercise_id: exercise.id, order: 1 }]
+        } }.to_json,
         headers: headers
 
       expect(response).to have_http_status(:created)
@@ -44,6 +52,14 @@ RSpec.describe "Workouts API", type: :request do
       expect(body["start_time"]).to eq("09:00")
       expect(body["end_time"]).to eq("10:30")
       expect(body["gym_type"]).to eq("anytime")
+    end
+
+    it "returns 422 when no exercises" do
+      post "/api/v1/workouts",
+        params: { workout: { date: "2026-03-01", condition: 3 } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "creates a workout with nested exercises and sets" do
@@ -90,15 +106,15 @@ RSpec.describe "Workouts API", type: :request do
 
     it "includes side in workout_exercises" do
       exercise = create(:exercise)
-      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1, side: "右")
+      create(:workout_exercise, workout: workout, exercise: exercise, order: 2, side: "右")
 
       get "/api/v1/workouts/#{workout.id}", headers: headers
 
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
       exercises = body["workout_exercises"]
-      expect(exercises).to be_present
-      expect(exercises[0]["side"]).to eq("右")
+      side_exercise = exercises.find { |e| e["side"] == "右" }
+      expect(side_exercise).to be_present
     end
 
     it "returns 404 for another user's workout" do
@@ -134,14 +150,13 @@ RSpec.describe "Workouts API", type: :request do
     end
 
     it "updates with nested exercises and sets" do
-      exercise = create(:exercise)
-      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+      we = workout.workout_exercises.first
       ws = create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
 
       put "/api/v1/workouts/#{workout.id}",
         params: { workout: {
           workout_exercises_attributes: [{
-            id: we.id, exercise_id: exercise.id, order: 1,
+            id: we.id, exercise_id: we.exercise_id, order: 1,
             workout_sets_attributes: [
               { id: ws.id, set_number: 1, weight: 55.0, reps: 8 }
             ]
@@ -151,12 +166,14 @@ RSpec.describe "Workouts API", type: :request do
 
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
-      expect(body["workout_exercises"][0]["workout_sets"][0]["weight"].to_f).to eq(55.0)
+      updated_we = body["workout_exercises"].find { |e| e["id"] == we.id }
+      expect(updated_we["workout_sets"][0]["weight"].to_f).to eq(55.0)
     end
 
-    it "destroys nested exercise via _destroy" do
-      exercise = create(:exercise)
-      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+    it "destroys nested exercise via _destroy when others remain" do
+      we = workout.workout_exercises.first
+      extra_exercise = create(:exercise)
+      create(:workout_exercise, workout: workout, exercise: extra_exercise, order: 2)
       create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
 
       put "/api/v1/workouts/#{workout.id}",
@@ -169,15 +186,26 @@ RSpec.describe "Workouts API", type: :request do
       expect(WorkoutExercise.find_by(id: we.id)).to be_nil
     end
 
+    it "returns 422 when destroying all exercises" do
+      we = workout.workout_exercises.first
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: {
+          workout_exercises_attributes: [{ id: we.id, _destroy: true }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
     it "destroys nested workout_set via _destroy" do
-      exercise = create(:exercise)
-      we = create(:workout_exercise, workout: workout, exercise: exercise, order: 1)
+      we = workout.workout_exercises.first
       ws = create(:workout_set, workout_exercise: we, set_number: 1, weight: 50.0, reps: 10)
 
       put "/api/v1/workouts/#{workout.id}",
         params: { workout: {
           workout_exercises_attributes: [{
-            id: we.id, exercise_id: exercise.id, order: 1,
+            id: we.id, exercise_id: we.exercise_id, order: 1,
             workout_sets_attributes: [{ id: ws.id, _destroy: true }]
           }]
         } }.to_json,

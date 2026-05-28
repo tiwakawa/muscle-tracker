@@ -22,6 +22,10 @@ module Api
       end
 
       def destroy
+        if @workout.workout_exercises.size <= 1
+          render json: { errors: ["種目を1つ以上追加してください"] }, status: :unprocessable_entity
+          return
+        end
         @workout_exercise.destroy
         head :no_content
       end
