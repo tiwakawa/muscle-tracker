@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getTokens, userSettingsApi, exportApi, clearTokens } from "@/lib/api";
+import { getTokens, authApi, userSettingsApi, exportApi, clearTokens } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
 
 const ACCENT = "#5b5bf2";
@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [exportState, setExportState] = useState<"idle" | "exporting" | "done">("idle");
   const [exportUrl, setExportUrl] = useState("");
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
@@ -35,6 +36,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!ready) return;
+    authApi.me().then((res) => setUserEmail(res.data.email)).catch(() => {});
     userSettingsApi.get().then((data) => {
       setDefaultPrompt(data.default_system_prompt);
       const prompt = data.system_prompt ?? data.default_system_prompt;
@@ -205,10 +207,16 @@ export default function SettingsPage() {
 
         {/* Card 3: App Info */}
         <div className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_1px_2px_rgba(15,18,40,0.06),0_6px_16px_rgba(15,18,40,0.06)] overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3.5">
-            <span className="text-[13px] font-medium text-gray-900">バージョン</span>
-            <span className="font-mono text-xs font-medium text-gray-400">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-black/[0.04]">
+            <span className="text-[13px] font-medium text-gray-900 flex-shrink-0 mr-4">バージョン</span>
+            <span className="font-mono text-xs font-medium text-gray-400 overflow-x-auto max-w-[60%] whitespace-nowrap">
               {process.env.APP_VERSION ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between px-4 py-3.5">
+            <span className="text-[13px] font-medium text-gray-900 flex-shrink-0 mr-4">メールアドレス</span>
+            <span className="font-mono text-xs font-medium text-gray-400 overflow-x-auto max-w-[60%] whitespace-nowrap">
+              {userEmail ?? "—"}
             </span>
           </div>
         </div>
