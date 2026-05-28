@@ -50,6 +50,7 @@ module Api
           .joins(:workout)
           .where(exercise_id: @exercise.id, workouts: { user_id: current_user.id })
           .where(side: params[:side].presence || "")
+        scope = scope.where.not(workout_id: params[:exclude_workout_id]) if params[:exclude_workout_id].present?
         workout_exercise = scope.order("workouts.date DESC, workouts.id DESC").first
         sets = workout_exercise ? workout_exercise.workout_sets.order(:set_number) : []
         render json: sets.map { |s| { weight: s.weight, reps: s.reps } }

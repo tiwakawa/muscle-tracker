@@ -101,8 +101,13 @@ export const authApi = {
 // ---- Exercises ----
 export const exercisesApi = {
   list: () => request<Exercise[]>("GET", "/api/v1/exercises"),
-  lastSets: (exerciseId: number, side?: string) =>
-    request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets${side ? `?side=${encodeURIComponent(side)}` : ""}`),
+  lastSets: (exerciseId: number, opts?: { side?: string; excludeWorkoutId?: number }) => {
+    const params = new URLSearchParams();
+    if (opts?.side) params.set("side", opts.side);
+    if (opts?.excludeWorkoutId) params.set("exclude_workout_id", String(opts.excludeWorkoutId));
+    const qs = params.toString();
+    return request<{ weight: string | null; reps: number | null }[]>("GET", `/api/v1/exercises/${exerciseId}/last_sets${qs ? `?${qs}` : ""}`);
+  },
   weightHistory: (exerciseId: number) =>
     request<{ date: string; max_weight: number }[]>("GET", `/api/v1/exercises/${exerciseId}/weight_history`),
 };

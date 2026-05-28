@@ -171,6 +171,25 @@ RSpec.describe "Exercises API", type: :request do
       expect(body).to eq([])
     end
 
+    it "excludes the specified workout and returns the next most recent" do
+      older_workout = create(:workout, user: user, date: Date.today - 7)
+      older_we = create(:workout_exercise, workout: older_workout, exercise: exercise, order: 2)
+      create(:workout_set, workout_exercise: older_we, weight: 40.0, reps: 10, set_number: 1)
+
+      newer_workout = create(:workout, user: user, date: Date.today)
+      newer_we = create(:workout_exercise, workout: newer_workout, exercise: exercise, order: 2)
+      create(:workout_set, workout_exercise: newer_we, weight: 50.0, reps: 8, set_number: 1)
+
+      get "/api/v1/exercises/#{exercise.id}/last_sets",
+        params: { exclude_workout_id: newer_workout.id },
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body.length).to eq(1)
+      expect(body[0]["weight"].to_f).to eq(40.0)
+    end
+
     it "does not return other users' sets" do
       other_workout = create(:workout)
       other_we = create(:workout_exercise, workout: other_workout, exercise: exercise, order: 1)

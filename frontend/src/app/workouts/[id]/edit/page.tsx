@@ -7,6 +7,7 @@ import type { Exercise } from "@/lib/types";
 import ConditionScale from "@/components/workout/ConditionScale";
 import DatePickerSheet from "@/components/workout/DatePickerSheet";
 import ReorderList from "@/components/workout/ReorderList";
+import { generateSets, type ProposedSet } from "@/lib/workoutProposal";
 
 const GYM_TYPE_OPTIONS = [
   { value: "anytime", label: "エニタイム" },
@@ -100,6 +101,8 @@ export default function EditWorkoutPage() {
   const [error, setError] = useState("");
   const [dateOpen, setDateOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [proposalBlockId, setProposalBlockId] = useState<string | null>(null);
+  const [ruleHintBlockId, setRuleHintBlockId] = useState<string | null>(null);
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
 
   useEffect(() => {
@@ -146,6 +149,15 @@ export default function EditWorkoutPage() {
         });
         setBlocks(loadedBlocks);
         setOriginalBlockIds(loadedBlocks.map((b) => b.dbId!));
+
+        // Fetch last sets for each block (for proposal feature)
+        loadedBlocks.forEach((block) => {
+          if (block.exerciseId) {
+            exercisesApi.lastSets(parseInt(block.exerciseId), { side: block.side || undefined, excludeWorkoutId: workoutId }).then((sets) => {
+              setLastSetsMap((prev) => ({ ...prev, [block.id]: sets }));
+            }).catch(() => {});
+          }
+        });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -177,7 +189,7 @@ export default function EditWorkoutPage() {
     setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, exerciseId } : b)));
     if (exerciseId) {
       const block = blocks.find((b) => b.id === blockId);
-      exercisesApi.lastSets(parseInt(exerciseId), block?.side || undefined).then((sets) => {
+      exercisesApi.lastSets(parseInt(exerciseId), { side: block?.side || undefined, excludeWorkoutId: workoutId }).then((sets) => {
         setLastSetsMap((prev) => ({ ...prev, [blockId]: sets }));
       }).catch(() => {});
     }
@@ -190,7 +202,7 @@ export default function EditWorkoutPage() {
     if (field === "side") {
       const block = blocks.find((b) => b.id === blockId);
       if (block?.exerciseId) {
-        exercisesApi.lastSets(parseInt(block.exerciseId), value || undefined).then((sets) => {
+        exercisesApi.lastSets(parseInt(block.exerciseId), { side: value || undefined, excludeWorkoutId: workoutId }).then((sets) => {
           setLastSetsMap((prev) => ({ ...prev, [blockId]: sets }));
         }).catch(() => {});
       }
@@ -607,18 +619,18 @@ export default function EditWorkoutPage() {
                       </button>
                     </div>
 
-                    {/* Side segment control */}
-                    <div className="mt-2 mb-3">
-                      <div className="inline-flex p-[3px] bg-[#F3F3F6] rounded-[10px] gap-0.5">
+                    {/* Meta row: side segment + proposal button */}
+                    <div className="flex items-center gap-2 mt-2 mb-3">
+                      <div className="inline-flex p-[3px] bg-[#F3F3F6] rounded-[9px] gap-0.5">
                         {SIDE_OPTIONS.map((opt) => {
                           const active = block.side === opt.value;
                           return (
                             <button
                               key={opt.value}
                               onClick={() => updateBlock(block.id, "side", opt.value)}
-                              className={`px-3.5 py-1.5 rounded-lg text-[13px] min-w-[44px] transition-all ${
+                              className={`px-3.5 py-1 rounded-md text-xs min-w-[44px] transition-all ${
                                 active
-                                  ? "bg-white text-gray-900 font-semibold shadow-[0_1px_2px_rgba(15,18,40,0.06),0_0_0_0.5px_rgba(15,18,40,0.04)]"
+                                  ? "bg-white text-gray-900 font-bold shadow-[0_1px_2px_rgba(15,18,40,0.08)]"
                                   : "text-gray-500 font-medium"
                               }`}
                             >
@@ -627,16 +639,79 @@ export default function EditWorkoutPage() {
                           );
                         })}
                       </div>
+                      <div className="flex-1" />
+                      {block.exerciseId && (
+                        <button
+                          onClick={() => setProposalBlockId(block.id)}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold
+                            bg-[#5b5bf2]/[0.08] border border-[#5b5bf2]/20 text-[#5b5bf2]"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M6 1l1.2 3.3L10.5 5.5 7.2 6.7 6 10l-1.2-3.3L1.5 5.5l3.3-1.2L6 1z" fill="currentColor"/>
+                          </svg>
+                          セット提案
+                        </button>
+                      )}
                     </div>
 
-                    {/* Previous sets hint */}
+                    {/* Previous sets (chip style, tappable for rule hint) */}
                     {block.exerciseId && lastSets.length > 0 && (
-                      <p className="text-[11px] text-gray-400 px-1 mb-2">
-                        前回: {lastSets.map((s) =>
-                          [s.weight ? `${s.weight}kg` : null, s.reps ? `${s.reps}回` : null]
-                            .filter(Boolean).join("×")
-                        ).join(" / ")}
-                      </p>
+                      <div className="relative mb-3">
+                        <button
+                          onClick={() => setRuleHintBlockId(ruleHintBlockId === block.id ? null : block.id)}
+                          className={`w-full px-2.5 py-2 rounded-[10px] flex items-center gap-2 flex-wrap text-left transition-all ${
+                            ruleHintBlockId === block.id
+                              ? "bg-[#5b5bf2]/[0.06] border border-[#5b5bf2]/20"
+                              : "bg-[#F3F3F6] border border-transparent"
+                          }`}
+                        >
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold tracking-[0.08em] flex-shrink-0 ${
+                            ruleHintBlockId === block.id ? "text-[#5b5bf2]" : "text-gray-500"
+                          }`}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6a4 4 0 1 0 1.2-2.8M2 2v2h2" stroke={ruleHintBlockId === block.id ? "#5b5bf2" : "rgb(156,163,175)"} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            前回
+                          </span>
+                          <span className="flex gap-2 flex-wrap font-mono text-xs">
+                            {lastSets.map((s, i) => (
+                              <span key={i} className="whitespace-nowrap">
+                                {s.weight && <><span className="font-bold text-gray-900">{s.weight}</span><span className="text-gray-400 mx-px">×</span></>}
+                                {s.reps && <span className="font-medium text-gray-500">{s.reps}</span>}
+                              </span>
+                            ))}
+                          </span>
+                        </button>
+                        {ruleHintBlockId === block.id && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 z-20 bg-white rounded-xl border border-black/[0.08]
+                            shadow-[0_4px_12px_rgba(15,18,40,0.1)] px-3.5 py-2.5">
+                            <div className="flex items-center gap-1 mb-2">
+                              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-gray-400">
+                                <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                                <path d="M5.5 4v2.5M5.5 7.5v.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                              </svg>
+                              <span className="text-[10px] font-bold text-gray-500 tracking-[0.08em]">重量調整ルール</span>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-baseline gap-2">
+                                <span className="w-4 font-mono text-sm font-bold text-center" style={{ color: "oklch(0.42 0.12 145)" }}>↑</span>
+                                <span className="flex-1 text-[12.5px] font-medium text-gray-500">全セット 10回達成</span>
+                                <span className="font-mono font-bold text-[12.5px]" style={{ color: "oklch(0.42 0.12 145)", letterSpacing: "-0.01em" }}>+2.5 kg</span>
+                              </div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="w-4 font-mono text-sm font-bold text-center" style={{ color: "oklch(0.5 0.14 25)" }}>↓</span>
+                                <span className="flex-1 text-[12.5px] font-medium text-gray-500">全セット 7回以下</span>
+                                <span className="font-mono font-bold text-[12.5px]" style={{ color: "oklch(0.5 0.14 25)", letterSpacing: "-0.01em" }}>-2.5 kg</span>
+                              </div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="w-4 font-mono text-sm font-bold text-center text-gray-500">→</span>
+                                <span className="flex-1 text-[12.5px] font-medium text-gray-500">それ以外</span>
+                                <span className="font-mono font-bold text-[12.5px] text-gray-500" style={{ letterSpacing: "-0.01em" }}>維持</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {/* Exercise memo */}
@@ -757,6 +832,31 @@ export default function EditWorkoutPage() {
         onClose={() => setDateOpen(false)}
       />
 
+      {/* Proposal sheet */}
+      {proposalBlockId && (
+        <ProposalSheet
+          lastSets={proposalBlockId ? (lastSetsMap[proposalBlockId] ?? []) : []}
+          onClose={() => setProposalBlockId(null)}
+          onApply={(proposedSets) => {
+            setBlocks((prev) =>
+              prev.map((b) =>
+                b.id === proposalBlockId
+                  ? {
+                      ...b,
+                      sets: proposedSets.map((ps) => ({
+                        id: crypto.randomUUID(),
+                        weight: ps.weight.toString(),
+                        reps: ps.reps.toString(),
+                      })),
+                    }
+                  : b
+              )
+            );
+            setProposalBlockId(null);
+          }}
+        />
+      )}
+
       {/* Note modal */}
       {noteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
@@ -808,6 +908,175 @@ export default function EditWorkoutPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Proposal Sheet (Bottom Sheet) ──
+function ProposalSheet({
+  lastSets,
+  onClose,
+  onApply,
+}: {
+  lastSets: { weight: string | null; reps: number | null }[];
+  onClose: () => void;
+  onApply: (sets: { weight: number; reps: number }[]) => void;
+}) {
+  const [weightInput, setWeightInput] = useState("");
+  const [sets, setSets] = useState<ProposedSet[] | null>(null);
+
+  const prevMaxWeight = lastSets.reduce((max, s) => {
+    const w = s.weight !== null ? Number(s.weight) : 0;
+    return w > max ? w : max;
+  }, 0);
+
+  const weight = Number(weightInput);
+  const isValid = weightInput !== "" && Number.isFinite(weight) && weight > 0;
+
+  const handleCalculate = () => {
+    if (!isValid) return;
+    setSets(generateSets(weight));
+  };
+
+  const handleApply = () => {
+    if (!sets) return;
+    onApply(sets.map((s) => ({ weight: s.weight, reps: s.reps })));
+  };
+
+  const totalWeight = sets?.reduce((a, s) => a + s.weight * s.reps, 0) ?? 0;
+  const totalReps = sets?.reduce((a, s) => a + s.reps, 0) ?? 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end"
+      style={{ background: "rgba(15,18,40,0.4)", animation: "fadeIn 0.2s ease" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full rounded-t-3xl flex flex-col"
+        style={{ maxHeight: "92%", animation: "slideUp 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-5 pb-3.5">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(91,91,242,0.1)" }}>
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                <path d="M6 1l1.2 3.3L10.5 5.5 7.2 6.7 6 10l-1.2-3.3L1.5 5.5l3.3-1.2L6 1z" fill="#5b5bf2"/>
+              </svg>
+            </span>
+            <span className="text-[16px] font-bold text-gray-900 tracking-tight">セット提案</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3.5 3.5l7 7M10.5 3.5l-7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Weight input */}
+        <div className={`px-4 ${sets ? "pb-3" : "pb-8"}`}>
+          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] mb-1.5">ワーキング重量</div>
+          <div className="flex gap-2">
+            <div className="flex-1 flex items-center h-[46px] px-3.5 border border-black/[0.08] rounded-[11px] bg-white
+              focus-within:border-[#5b5bf2] focus-within:ring-2 focus-within:ring-[#5b5bf2]/10 transition-all">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={weightInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                    setWeightInput(v);
+                  }
+                }}
+                placeholder={prevMaxWeight > 0 ? `前回最大: ${prevMaxWeight}` : "例: 49"}
+                autoFocus
+                className="flex-1 border-none outline-none bg-transparent font-mono text-[18px] font-bold
+                  text-gray-900 tracking-tight w-full placeholder:text-gray-400 placeholder:font-medium placeholder:text-sm"
+              />
+              <span className="text-xs font-medium text-gray-400 ml-1">kg</span>
+            </div>
+            <button
+              onClick={handleCalculate}
+              disabled={!isValid}
+              className="px-[18px] h-[46px] rounded-[11px] text-white text-[13px] font-bold tracking-tight
+                disabled:opacity-40 transition-all"
+              style={{ background: "#5b5bf2", boxShadow: "0 2px 8px rgba(91,91,242,0.22)" }}
+            >
+              計算
+            </button>
+          </div>
+        </div>
+
+        {/* Generated sets */}
+        {sets && (
+          <>
+            <div className="flex-1 overflow-y-auto px-4 pt-1 pb-1">
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em]">5セット構成</div>
+                <div className="font-mono text-[10px] font-medium text-gray-400">
+                  total {totalWeight.toLocaleString()}kg / {totalReps}回
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                {sets.map((s, i) => {
+                  const isWarmup = s.type === "warmup";
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px]"
+                      style={{
+                        background: isWarmup ? "oklch(0.97 0.02 60)" : "#F3F3F6",
+                        border: isWarmup ? "1px solid oklch(0.93 0.03 60)" : "1px solid transparent",
+                      }}
+                    >
+                      <span
+                        className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center font-mono text-xs font-bold text-white"
+                        style={{ background: isWarmup ? "oklch(0.85 0.08 60)" : "#5b5bf2" }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="flex items-baseline gap-1 flex-1 font-mono tracking-tight">
+                        <span className="text-[18px] font-bold text-gray-900">{s.weight}</span>
+                        <span className="text-[11px] text-gray-400">kg</span>
+                        <span className="text-sm text-gray-400 mx-1">×</span>
+                        <span className="text-[18px] font-bold text-gray-900">{s.reps}</span>
+                        <span className="text-[11px] text-gray-400">回</span>
+                      </span>
+                      {isWarmup && (
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white tracking-wide"
+                          style={{ background: "oklch(0.85 0.1 60)" }}
+                        >
+                          W-UP
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="px-4 pt-3 pb-6 border-t border-black/[0.08] bg-white">
+              <button
+                onClick={handleApply}
+                className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight"
+                style={{
+                  background: "#5b5bf2",
+                  boxShadow: "0 4px 12px rgba(91,91,242,0.3), 0 1px 2px rgba(91,91,242,0.15)",
+                }}
+              >
+                適用
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
