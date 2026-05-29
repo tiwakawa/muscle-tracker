@@ -103,6 +103,7 @@ export default function EditWorkoutPage() {
   const [reorderMode, setReorderMode] = useState(false);
   const [proposalBlockId, setProposalBlockId] = useState<string | null>(null);
   const [ruleHintBlockId, setRuleHintBlockId] = useState<string | null>(null);
+  const [exercisePickerFor, setExercisePickerFor] = useState<string | null>(null);
   const [noteModal, setNoteModal] = useState<NoteModal | null>(null);
 
   useEffect(() => {
@@ -163,11 +164,6 @@ export default function EditWorkoutPage() {
       .finally(() => setLoading(false));
   }, [ready, isValidId, workoutId]);
 
-  const grouped = exercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
-    (acc[ex.category] ??= []).push(ex);
-    return acc;
-  }, {});
-
   const totalSets = blocks.reduce((a, b) => a + b.sets.length, 0);
   const totalVolume = blocks.reduce(
     (a, block) =>
@@ -176,9 +172,21 @@ export default function EditWorkoutPage() {
   );
 
   const addBlock = () => {
-    const id = crypto.randomUUID();
-    focusBlockIdRef.current = id;
-    setBlocks((prev) => [...prev, { id, exerciseId: "", side: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
+    setExercisePickerFor("new");
+  };
+
+  const handlePickExercise = (exerciseId: string) => {
+    if (exercisePickerFor === "new") {
+      const id = crypto.randomUUID();
+      focusBlockIdRef.current = id;
+      setBlocks((prev) => [...prev, { id, exerciseId, side: "", memo: "", sets: [newSet()], originalSetIds: [] }]);
+      exercisesApi.lastSets(parseInt(exerciseId), { side: undefined, excludeWorkoutId: workoutId }).then((sets) => {
+        setLastSetsMap((prev) => ({ ...prev, [id]: sets }));
+      }).catch(() => {});
+    } else if (exercisePickerFor) {
+      handleExerciseChange(exercisePickerFor, exerciseId);
+    }
+    setExercisePickerFor(null);
   };
 
   const removeBlock = (blockId: string) => {
@@ -568,34 +576,19 @@ export default function EditWorkoutPage() {
                       }
                     }}
                   >
-                    {/* Header: exercise selector + note + delete */}
+                    {/* Header: exercise name + note + delete */}
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 relative">
-                        <div className="flex items-center justify-between py-1 px-1 pointer-events-none">
-                          <span className={`text-[17px] font-semibold tracking-tight ${
-                            exercise ? "text-gray-900" : "text-gray-400"
-                          }`}>
-                            {exercise?.name || "種目を選択"}
-                          </span>
-                          <svg className="text-gray-400" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <select
-                          value={block.exerciseId}
-                          onChange={(e) => handleExerciseChange(block.id, e.target.value)}
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                        >
-                          <option value="" disabled>種目を選択</option>
-                          {Object.entries(grouped).map(([cat, exs]) => (
-                            <optgroup key={cat} label={CATEGORY_JP[cat] ?? cat}>
-                              {exs.map((ex) => (
-                                <option key={ex.id} value={ex.id}>{ex.name}</option>
-                              ))}
-                            </optgroup>
-                          ))}
-                        </select>
-                      </div>
+                      <button
+                        onClick={() => setExercisePickerFor(block.id)}
+                        className="flex-1 flex items-center gap-1.5 py-1 px-1 text-left"
+                      >
+                        <span className="text-[17px] font-bold tracking-tight text-gray-900">
+                          {exercise?.name || "種目を選択"}
+                        </span>
+                        <svg className="text-gray-400 flex-shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
                       {exercise && (
                         <button
                           onClick={() => openNoteModal(exercise.id, exercise.name)}
@@ -831,6 +824,62 @@ export default function EditWorkoutPage() {
         onChange={setDate}
         onClose={() => setDateOpen(false)}
       />
+
+      {/* Exercise picker sheet */}
+      {exercisePickerFor && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end"
+          style={{ background: "rgba(15,18,40,0.4)", animation: "fadeIn 0.2s ease" }}
+          onClick={() => setExercisePickerFor(null)}
+        >
+          <div
+            className="bg-white w-full rounded-t-3xl max-h-[70%] flex flex-col"
+            style={{ animation: "slideUp 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 pt-5 pb-2 flex-shrink-0">
+              <div className="text-[11px] font-semibold text-gray-400 tracking-[0.12em]">種目を選択</div>
+            </div>
+            <div className="px-5 pb-8 overflow-y-auto flex-1">
+              <div className="flex flex-col gap-0.5">
+                {(() => {
+                  let lastCat = "";
+                  return exercises.map((ex) => {
+                    const showCat = ex.category !== lastCat;
+                    lastCat = ex.category;
+                    const currentBlockId = exercisePickerFor !== "new" ? exercisePickerFor : null;
+                    const currentExId = currentBlockId ? blocks.find((b) => b.id === currentBlockId)?.exerciseId : null;
+                    const isActive = currentExId === ex.id.toString();
+                    return (
+                      <div key={ex.id}>
+                        {showCat && (
+                          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.08em] px-3 pt-3 pb-1">
+                            {CATEGORY_JP[ex.category] ?? ex.category}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handlePickExercise(ex.id.toString())}
+                          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left text-sm ${
+                            isActive ? "font-bold" : "font-medium"
+                          }`}
+                          style={{ color: isActive ? "#5b5bf2" : undefined }}
+                        >
+                          <span>{ex.name}</span>
+                          {isActive && (
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                              <path d="M3 7.5l2.5 2.5L11 4" stroke="#5b5bf2" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Proposal sheet */}
       {proposalBlockId && (
