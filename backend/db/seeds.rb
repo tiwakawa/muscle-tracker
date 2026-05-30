@@ -25,6 +25,7 @@ exercises = [
   { name: "ヒップヒンジ", category: "legs" },
   { name: "アブドミナル", category: "core" },
   { name: "バックエクステンション", category: "back" },
+  { name: "バーティカルロウ", category: "back" },
 ]
 
 exercises.each do |attrs|
