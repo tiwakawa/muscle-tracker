@@ -239,7 +239,7 @@ export default function GraphsPage() {
   const vsStart = startValue && startValue > 0 && latestValue !== null
     ? Math.round(((latestValue - startValue) / startValue) * 100)
     : null;
-  const vsStartAbs = startValue && latestValue !== null ? latestValue - startValue : null;
+  const vsStartAbs = startValue && latestValue !== null ? Math.round((latestValue - startValue) * 10) / 10 : null;
 
   const unit = metric === "max_reps" ? "回" : "kg";
 
@@ -353,7 +353,7 @@ export default function GraphsPage() {
                   <>
                     <div className="flex items-baseline gap-1 justify-end">
                       <span className="font-mono text-[22px] font-bold tracking-tighter leading-none" style={{ color: "oklch(0.42 0.12 145)" }}>
-                        {vsStartAbs >= 0 ? "+" : ""}{vsStartAbs}
+                        {vsStartAbs >= 0 ? "+" : ""}{vsStartAbs.toLocaleString()}
                       </span>
                       <span className="text-[11px] font-medium text-gray-500">{unit}</span>
                     </div>
