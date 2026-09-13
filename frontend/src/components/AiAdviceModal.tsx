@@ -197,20 +197,6 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
           {!isResultState && !generating && !checking && (
             <div className="flex flex-col gap-2.5">
               <button
-                onClick={handleGenerate}
-                className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight
-                  flex items-center justify-center gap-2"
-                style={{
-                  background: ACCENT,
-                  boxShadow: `0 4px 12px ${ACCENT}4d, 0 1px 2px ${ACCENT}26`,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1.2l1.4 3.8L12.2 6.4 8.4 7.8 7 11.7 5.6 7.8 1.8 6.4l3.8-1.4L7 1.2z" fill="white"/>
-                </svg>
-                アドバイスを取得
-              </button>
-              <button
                 onClick={handleCopyAiText}
                 className="w-full h-11 rounded-xl text-sm font-semibold text-gray-500
                   flex items-center justify-center gap-2
@@ -221,6 +207,19 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
                   <path d="M9.5 4.5V3.3a1.2 1.2 0 0 0-1.2-1.2H3.2A1.2 1.2 0 0 0 2 3.3v5.1a1.2 1.2 0 0 0 1.2 1.2H4.5" stroke="currentColor" strokeWidth="1.3"/>
                 </svg>
                 トレーニングデータをコピー
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled
+                title="現在利用できません"
+                className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight
+                  flex items-center justify-center gap-2 opacity-40 cursor-not-allowed"
+                style={{ background: ACCENT }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.2l1.4 3.8L12.2 6.4 8.4 7.8 7 11.7 5.6 7.8 1.8 6.4l3.8-1.4L7 1.2z" fill="white"/>
+                </svg>
+                アドバイスを取得
               </button>
             </div>
           )}
@@ -238,18 +237,6 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
 
           {isResultState && (
             <div className="flex flex-col gap-2.5">
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight
-                  flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: ACCENT }}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 6a3.5 3.5 0 1 0 1.1-2.5M2.5 2v2h2" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                再取得
-              </button>
               <div className="flex gap-2">
                 <button
                   onClick={handleCopyAdvice}
@@ -276,6 +263,19 @@ export default function AiAdviceModal({ workout, onClose }: Props) {
                   データをコピー
                 </button>
               </div>
+              <button
+                onClick={handleGenerate}
+                disabled
+                title="現在利用できません"
+                className="w-full h-[50px] rounded-xl text-white text-sm font-bold tracking-tight
+                  flex items-center justify-center gap-2 opacity-40 cursor-not-allowed"
+                style={{ background: ACCENT }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 6a3.5 3.5 0 1 0 1.1-2.5M2.5 2v2h2" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                再取得
+              </button>
             </div>
           )}
         </div>

@@ -13,7 +13,7 @@ Rails 8 API + Next.js 14 + PostgreSQL + Docker
 - **スムーズな記録** — セット・重量・回数を素早く入力できるUIを意識しています
 - **必要な機能に特化** — 記録・グラフ・AIアドバイス・外部出力に絞っています
 - **データの永続化** — Google Sheetsへのエクスポートで長期的な記録管理が可能です
-- **AIアドバイス** — 当日のトレーニング内容をもとにClaude APIがフィードバックを生成します
+- **AIアドバイス** — 当日のトレーニング内容をコピーして外部のAIチャットに相談できます（Claude API連携は実装済みですが、現在UIからは無効化しています）
 
 ## Screenshots
 
@@ -271,6 +271,8 @@ postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 |---|---|---|
 | GET | `/api/v1/workouts/:workout_id/ai_advice` | 取得 |
 | POST | `/api/v1/workouts/:workout_id/ai_advice` | 生成（Claude API） |
+
+> 現在、フロントエンドの「アドバイスを取得」ボタンは無効化しています（Claude APIは使わず、トレーニングデータをコピーして外部AIチャットに相談する運用に切り替えたため）。バックエンドの実装・エンドポイントは残しています。
 
 ### ユーザー設定
 
