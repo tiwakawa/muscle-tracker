@@ -2,6 +2,8 @@ import type {
   AuthTokens,
   Exercise,
   ExerciseNote,
+  NotionSyncReport,
+  Warmup,
   Workout,
   WorkoutExercise,
   WorkoutSet,
@@ -226,10 +228,16 @@ export const workoutSetsApi = {
 export const exerciseNotesApi = {
   get: (exerciseId: number) =>
     request<ExerciseNote>("GET", `/api/v1/exercise_notes/${exerciseId}`),
-  upsert: (exerciseId: number, note: string) =>
-    request<ExerciseNote>("PUT", `/api/v1/exercise_notes/${exerciseId}`, {
-      exercise_note: { note },
-    }),
+};
+
+// ---- Notion Sync ----
+export const notionSyncApi = {
+  sync: () => request<NotionSyncReport>("POST", "/api/v1/notion_sync"),
+};
+
+// ---- Warmups ----
+export const warmupsApi = {
+  list: () => request<Warmup[]>("GET", "/api/v1/warmups"),
 };
 
 // ---- Export ----

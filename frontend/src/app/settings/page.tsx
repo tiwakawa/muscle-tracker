@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getTokens, authApi, userSettingsApi, exportApi, clearTokens } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { getTokens, authApi, userSettingsApi, exportApi, clearTokens, notionSyncApi, warmupsApi } from "@/lib/api";
+import type { Warmup, NotionSyncReport } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
 
 const ACCENT = "#5b5bf2";
@@ -20,6 +23,11 @@ export default function SettingsPage() {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [notionSyncState, setNotionSyncState] = useState<"idle" | "syncing">("idle");
+  const [notionSyncReport, setNotionSyncReport] = useState<NotionSyncReport | null>(null);
+  const [notionLastSyncTime, setNotionLastSyncTime] = useState<string | null>(null);
+  const [warmups, setWarmups] = useState<Warmup[]>([]);
+  const [selectedWarmupNo, setSelectedWarmupNo] = useState<number | null>(null);
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToast({ type, text });
@@ -44,9 +52,14 @@ export default function SettingsPage() {
       setSavedPrompt(prompt);
       setLoading(false);
     });
+    warmupsApi.list().then((data) => {
+      setWarmups(data);
+      if (data.length > 0) setSelectedWarmupNo(data[0].no);
+    }).catch(() => {});
   }, [ready]);
 
   const isDirty = systemPrompt !== savedPrompt;
+  const selectedWarmup = warmups.find((w) => w.no === selectedWarmupNo) ?? null;
 
   const handleReset = () => {
     setSystemPrompt(defaultPrompt);
@@ -64,6 +77,25 @@ export default function SettingsPage() {
     } catch {
       setExportState("idle");
       showToast("error", "同期に失敗しました");
+    }
+  };
+
+  const handleNotionSync = async () => {
+    setNotionSyncState("syncing");
+    try {
+      const report = await notionSyncApi.sync();
+      setNotionSyncReport(report);
+      const now = new Date();
+      setNotionLastSyncTime(`${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
+      showToast("success", "Notionマスタを同期しました");
+      warmupsApi.list().then((data) => {
+        setWarmups(data);
+        if (data.length > 0 && selectedWarmupNo === null) setSelectedWarmupNo(data[0].no);
+      }).catch(() => {});
+    } catch {
+      showToast("error", "Notion同期に失敗しました");
+    } finally {
+      setNotionSyncState("idle");
     }
   };
 
@@ -203,6 +235,110 @@ export default function SettingsPage() {
           >
             {exportState === "exporting" ? "同期中..." : "データを同期"}
           </button>
+        </div>
+
+        {/* Card: NOTION SYNC */}
+        <div className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_1px_2px_rgba(15,18,40,0.06),0_6px_16px_rgba(15,18,40,0.06)] px-4 py-3.5">
+          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.12em] mb-1">NOTION SYNC</div>
+          <div className="text-[15px] font-bold text-gray-900 tracking-tight mb-1">トレーニングマスター連携</div>
+          <div className="text-[11px] font-medium text-gray-500 leading-relaxed mb-3">
+            Notionの種目メモ・ウォームアップ情報を取り込みます。
+          </div>
+
+          {(notionLastSyncTime || notionSyncReport) && (
+            <div className="bg-[#F3F3F6] rounded-[10px] px-3 py-2.5 mb-3 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-gray-400 tracking-[0.08em]">最終同期</span>
+                <span className="font-mono text-xs font-semibold text-gray-900">{notionLastSyncTime ?? "—"}</span>
+              </div>
+              {notionSyncReport && (
+                <div className="text-[11px] text-gray-600 space-y-0.5 pt-1 border-t border-black/[0.05]">
+                  <div>種目メモ: 更新{notionSyncReport.exercise_notes.upserted}件・削除{notionSyncReport.exercise_notes.deleted}件</div>
+                  <div>ウォームアップ: 更新{notionSyncReport.warmups.upserted}件・削除{notionSyncReport.warmups.deleted}件</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {notionSyncReport && notionSyncReport.errors.length > 0 && (
+            <div className="px-3 py-2 mb-3 rounded-[10px] bg-amber-50 text-amber-700 text-[11px] leading-relaxed space-y-0.5">
+              {notionSyncReport.errors.map((err, i) => (
+                <div key={i}>{err}</div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={handleNotionSync}
+            disabled={notionSyncState === "syncing"}
+            className="w-full py-2.5 rounded-xl text-white text-[13px] font-bold tracking-tight
+              disabled:opacity-50 transition-all"
+            style={{ background: ACCENT }}
+          >
+            {notionSyncState === "syncing" ? "同期中..." : "Notionと同期"}
+          </button>
+        </div>
+
+        {/* Card: WARMUP */}
+        <div className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_1px_2px_rgba(15,18,40,0.06),0_6px_16px_rgba(15,18,40,0.06)] px-4 py-3.5">
+          <div className="text-[10px] font-semibold text-gray-400 tracking-[0.12em] mb-1">WARMUP</div>
+          <div className="text-[15px] font-bold text-gray-900 tracking-tight mb-3">ウォームアップ</div>
+
+          {warmups.length === 0 ? (
+            <div className="text-[11px] text-gray-400 text-center py-4">まだ同期されていません</div>
+          ) : (
+            <>
+              <select
+                value={selectedWarmupNo ?? ""}
+                onChange={(e) => setSelectedWarmupNo(Number(e.target.value))}
+                className="w-full bg-[#F3F3F6] rounded-[10px] border border-black/[0.08] px-3 py-2.5 text-xs font-medium text-gray-900 mb-3 outline-none"
+              >
+                {warmups.map((w) => (
+                  <option key={w.id} value={w.no}>
+                    {w.no}. {w.name}
+                  </option>
+                ))}
+              </select>
+
+              {selectedWarmup && (
+                <div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {selectedWarmup.timing && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${ACCENT}12`, color: ACCENT }}>
+                        {selectedWarmup.timing}
+                      </span>
+                    )}
+                    {selectedWarmup.priority && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.priority}</span>
+                    )}
+                    {selectedWarmup.status && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.status}</span>
+                    )}
+                    {selectedWarmup.category.map((c) => (
+                      <span key={c} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{c}</span>
+                    ))}
+                  </div>
+                  <div className="text-sm text-gray-700 leading-relaxed">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-1">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold mt-4 mb-1">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-bold mt-3 mb-1">{children}</h3>,
+                        p: ({ children }) => <p className="mb-2">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                        li: ({ children }) => <li className="ml-2">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      }}
+                    >
+                      {selectedWarmup.body_markdown ?? ""}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Card 3: App Info */}

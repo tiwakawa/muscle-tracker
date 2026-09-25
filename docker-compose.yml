@@ -33,6 +33,9 @@ services:
       GOOGLE_CREDENTIALS_JSON:
       GOOGLE_SPREADSHEET_ID:
       ANTHROPIC_API_KEY:
+      NOTION_API_KEY:
+      NOTION_EXERCISES_DB_ID:
+      NOTION_WARMUPS_DB_ID:
     depends_on:
       db:
         condition: service_healthy

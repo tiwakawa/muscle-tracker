@@ -16,8 +16,9 @@ Rails.application.routes.draw do
           resources :workout_sets, only: [:create, :update, :destroy]
         end
       end
-get  "exercise_notes/:exercise_id", to: "exercise_notes#show"
-      put  "exercise_notes/:exercise_id", to: "exercise_notes#update"
+      get  "exercise_notes/:exercise_id", to: "exercise_notes#show"
+      post "notion_sync", to: "notion_sync#create"
+      resources :warmups, only: [ :index ]
       post "export", to: "exports#create"
       resource :user_setting, only: [:show, :update]
     end

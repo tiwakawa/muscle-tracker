@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { getTokens, exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
 import type { Exercise } from "@/lib/types";
 import ConditionScale from "@/components/workout/ConditionScale";
@@ -52,7 +54,6 @@ interface NoteModal {
   exerciseName: string;
   note: string;
   loading: boolean;
-  saving: boolean;
 }
 
 function todayStr() {
@@ -193,23 +194,12 @@ export default function NewWorkoutPage() {
   };
 
   const openNoteModal = async (exerciseId: number, exerciseName: string) => {
-    setNoteModal({ exerciseId, exerciseName, note: "", loading: true, saving: false });
+    setNoteModal({ exerciseId, exerciseName, note: "", loading: true });
     try {
       const data = await exerciseNotesApi.get(exerciseId);
       setNoteModal((prev) => prev && { ...prev, note: data.note ?? "", loading: false });
     } catch {
       setNoteModal((prev) => prev && { ...prev, loading: false });
-    }
-  };
-
-  const saveNote = async () => {
-    if (!noteModal) return;
-    setNoteModal((prev) => prev && { ...prev, saving: true });
-    try {
-      await exerciseNotesApi.upsert(noteModal.exerciseId, noteModal.note);
-      setNoteModal(null);
-    } catch {
-      setNoteModal((prev) => prev && { ...prev, saving: false });
     }
   };
 
@@ -850,35 +840,33 @@ export default function NewWorkoutPage() {
               <div className="flex justify-center py-6">
                 <div className="animate-spin h-6 w-6 border-4 border-[#5b5bf2] border-t-transparent rounded-full" />
               </div>
+            ) : noteModal.note ? (
+              <div className="text-sm text-gray-700 leading-relaxed max-h-[50vh] overflow-y-auto">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-1">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mt-4 mb-1">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mt-3 mb-1">{children}</h3>,
+                    p: ({ children }) => <p className="mb-2">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                    li: ({ children }) => <li className="ml-2">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                  }}
+                >
+                  {noteModal.note}
+                </ReactMarkdown>
+              </div>
             ) : (
-              <textarea
-                value={noteModal.note}
-                onChange={(e) =>
-                  setNoteModal((prev) => prev && { ...prev, note: e.target.value })
-                }
-                placeholder="この種目に関するメモ（フォームのコツ、重量の目標など）"
-                rows={5}
-                autoFocus
-                className="w-full px-3 py-2 border border-black/[0.08] rounded-xl text-sm resize-none
-                  focus:outline-none focus:ring-2 focus:ring-[#5b5bf2]/20 focus:border-[#5b5bf2]"
-              />
+              <div className="text-sm text-gray-400 text-center py-6">メモが登録されていません</div>
             )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setNoteModal(null)}
-                className="flex-1 py-3 border border-black/[0.08] rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={saveNote}
-                disabled={noteModal.loading || noteModal.saving}
-                className="flex-1 py-3 bg-[#5b5bf2] text-white rounded-xl text-sm font-medium
-                  hover:brightness-110 disabled:opacity-50 transition-all"
-              >
-                {noteModal.saving ? "保存中..." : "保存"}
-              </button>
-            </div>
+            <button
+              onClick={() => setNoteModal(null)}
+              className="w-full py-3 border border-black/[0.08] rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              閉じる
+            </button>
           </div>
         </div>
       )}

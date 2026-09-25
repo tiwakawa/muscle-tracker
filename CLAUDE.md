@@ -11,7 +11,7 @@
 | DB（ローカル） | PostgreSQL 16 (Docker) |
 | DB（本番） | Neon (Serverless PostgreSQL) |
 | 認証 | devise_token_auth（access-token / client / uid ヘッダー） |
-| 外部API | Claude API (AIアドバイス) / Google Sheets API (エクスポート) |
+| 外部API | Claude API (AIアドバイス) / Google Sheets API (エクスポート) / Notion API (マスタ連携) |
 | ホスティング | Vercel (frontend) / Render.com (backend) |
 
 ## ディレクトリ構成
@@ -68,6 +68,9 @@ docker compose ps               # サービスの状態確認
   - `muscle-tracker-google-credentials-json` → GOOGLE_CREDENTIALS_JSON
   - `muscle-tracker-google-spreadsheet-id` → GOOGLE_SPREADSHEET_ID
   - `muscle-tracker-anthropic-api-key` → ANTHROPIC_API_KEY
+  - `muscle-tracker-notion-token` → NOTION_API_KEY
+  - `muscle-tracker-notion-exercises-db-id` → NOTION_EXERCISES_DB_ID
+  - `muscle-tracker-notion-warmups-db-id` → NOTION_WARMUPS_DB_ID
 - **DB接続**: docker-compose.ymlにハードコード（ローカル開発用）
 - 本番（Render/Vercel）の環境変数は各ダッシュボードで管理
 
@@ -77,6 +80,11 @@ docker compose ps               # サービスの状態確認
 - 認証はdevise_token_authのトークン方式（JWTではない）
 - フロントエンドはLocalStorageでトークンを保持し `lib/api.ts` 経由で付与
 - Serviceクラスにビジネスロジックを分離（`app/services/`）
+- Notionマスタ連携はオンデマンド・一方向同期（Notion→muscle-tracker、`POST /api/v1/notion_sync`）。手動編集機能は廃止済み
+  - 種目メモ: `exercise_notes`（既存テーブル）、`tracker_id`（＝`exercises.id`）で照合、同期実行ユーザーのみ対象
+  - ウォームアップ: `warmups`（新規テーブル）、`notion_page_id`（Notionページの不変ID）で照合、全ユーザー共通
+  - 同期結果でNotion側のクエリ結果に存在しないレコードは削除される（完全ミラー）。ページの状態変更（例: 中止）だけでは削除されない
+  - `POST /api/v1/notion_sync` は認証済みユーザーであれば誰でも実行可能（ユーザー種別による権限制御はなし）。個人利用前提のため許容している設計判断であり、`warmups`は全ユーザー共通データとして誰の実行でも全削除・書き換えされ得る点に注意
 
 ## コード規約
 

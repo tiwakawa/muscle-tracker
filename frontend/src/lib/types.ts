@@ -56,6 +56,24 @@ export interface ExerciseNote {
   updated_at?: string;
 }
 
+export interface Warmup {
+  id: number;
+  no: number;
+  name: string;
+  category: string[];
+  timing: string | null;
+  priority: string | null;
+  items: string[];
+  status: string | null;
+  body_markdown: string | null;
+}
+
+export interface NotionSyncReport {
+  exercise_notes: { upserted: number; deleted: number; skipped: number };
+  warmups: { upserted: number; deleted: number; skipped: number };
+  errors: string[];
+}
+
 export interface AuthTokens {
   "access-token": string;
   client: string;

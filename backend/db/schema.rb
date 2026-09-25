@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_25_150641) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_114845) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,6 +71,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_25_150641) do
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
+  end
+
+  create_table "warmups", force: :cascade do |t|
+    t.text "body_markdown"
+    t.string "category", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.string "items", default: [], null: false, array: true
+    t.string "name", null: false
+    t.integer "no", null: false
+    t.string "notion_page_id", null: false
+    t.string "priority"
+    t.string "status"
+    t.string "timing"
+    t.datetime "updated_at", null: false
+    t.index ["notion_page_id"], name: "index_warmups_on_notion_page_id", unique: true
   end
 
   create_table "workout_exercises", force: :cascade do |t|
