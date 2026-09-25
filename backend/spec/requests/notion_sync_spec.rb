@@ -48,7 +48,7 @@ RSpec.describe "NotionSync API", type: :request do
     context "when environment variables are missing" do
       before do
         service = instance_double(NotionSyncService)
-        allow(service).to receive(:sync_all).and_raise(KeyError, "key not found: \"NOTION_API_KEY\"")
+        allow(service).to receive(:sync_all).and_raise(KeyError, "key not found: \"NOTION_TOKEN\"")
         allow(NotionSyncService).to receive(:new).and_return(service)
       end
 

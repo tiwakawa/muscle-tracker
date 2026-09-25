@@ -68,7 +68,7 @@ docker compose ps               # サービスの状態確認
   - `muscle-tracker-google-credentials-json` → GOOGLE_CREDENTIALS_JSON
   - `muscle-tracker-google-spreadsheet-id` → GOOGLE_SPREADSHEET_ID
   - `muscle-tracker-anthropic-api-key` → ANTHROPIC_API_KEY
-  - `muscle-tracker-notion-token` → NOTION_API_KEY
+  - `muscle-tracker-notion-token` → NOTION_TOKEN
   - `muscle-tracker-notion-exercises-db-id` → NOTION_EXERCISES_DB_ID
   - `muscle-tracker-notion-warmups-db-id` → NOTION_WARMUPS_DB_ID
 - **DB接続**: docker-compose.ymlにハードコード（ローカル開発用）

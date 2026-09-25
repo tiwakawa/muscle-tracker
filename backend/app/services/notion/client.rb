@@ -9,7 +9,7 @@ module Notion
 
     class ApiError < StandardError; end
 
-    def initialize(api_key: ENV.fetch("NOTION_API_KEY"))
+    def initialize(api_key: ENV.fetch("NOTION_TOKEN"))
       @api_key = api_key
     end
 

@@ -7,7 +7,7 @@ export GOOGLE_SPREADSHEET_ID=$(security find-generic-password -a "$USER" -s "mus
 export ANTHROPIC_API_KEY=$(security find-generic-password -a "$USER" -s "muscle-tracker-anthropic-api-key" -w)
 
 # Notionマスタ連携用（Keychain未登録の場合は空のまま起動し、同期機能のみ利用不可にする）
-export NOTION_API_KEY=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-token" -w 2>/dev/null || echo "")
+export NOTION_TOKEN=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-token" -w 2>/dev/null || echo "")
 export NOTION_EXERCISES_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-exercises-db-id" -w 2>/dev/null || echo "")
 export NOTION_WARMUPS_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-warmups-db-id" -w 2>/dev/null || echo "")
 
