@@ -44,6 +44,7 @@ class AiAdviceService
     lines << header
 
     lines << "コンディション: #{CONDITION_LABEL[@workout.condition]}" if @workout.condition
+    lines << "ウォームアップ: #{@workout.warmups.map(&:name).join(', ')}" if @workout.warmups.any?
 
     workout_exercises = @workout.workout_exercises
       .includes(:exercise, :workout_sets)

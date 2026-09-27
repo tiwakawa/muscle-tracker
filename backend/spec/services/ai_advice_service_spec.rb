@@ -140,6 +140,22 @@ RSpec.describe AiAdviceService do
       end
     end
 
+    context "when workout has warmups" do
+      let(:warmup1) { create(:warmup, name: "肩甲骨はがし") }
+      let(:warmup2) { create(:warmup, name: "股関節ほぐし") }
+
+      before do
+        workout.warmup_ids = [ warmup1.id, warmup2.id ]
+        stub_anthropic_success
+      end
+
+      it "includes warmup names in message content" do
+        described_class.new(workout).generate_advice
+        expect(WebMock).to have_requested(:post, "https://api.anthropic.com/v1/messages")
+          .with { |req| JSON.parse(req.body)["messages"][0]["content"].include?("ウォームアップ: 肩甲骨はがし, 股関節ほぐし") }
+      end
+    end
+
     context "when API returns error status" do
       before { stub_anthropic_error(status: 500) }
 

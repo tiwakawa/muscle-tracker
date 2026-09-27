@@ -36,6 +36,9 @@ export function buildAiText(w: Workout): string {
   lines.push(header);
 
   if (w.condition) lines.push(`コンディション: ${CONDITION_LABEL[w.condition]}`);
+  if (w.warmups && w.warmups.length > 0) {
+    lines.push(`ウォームアップ: ${w.warmups.map((wu) => wu.name).join(", ")}`);
+  }
 
   if (w.workout_exercises && w.workout_exercises.length > 0) {
     lines.push("");
