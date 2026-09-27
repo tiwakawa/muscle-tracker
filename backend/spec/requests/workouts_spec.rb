@@ -92,6 +92,36 @@ RSpec.describe "Workouts API", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["errors"]).to be_present
     end
+
+    it "creates a workout with selected warmups" do
+      exercise = create(:exercise)
+      warmup1 = create(:warmup)
+      warmup2 = create(:warmup)
+      post "/api/v1/workouts",
+        params: { workout: {
+          date: "2026-03-01", condition: 4,
+          warmup_ids: [ warmup1.id, warmup2.id ],
+          workout_exercises_attributes: [{ exercise_id: exercise.id, order: 1 }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["warmups"].map { |w| w["id"] }).to contain_exactly(warmup1.id, warmup2.id)
+    end
+
+    it "creates a workout without warmups" do
+      exercise = create(:exercise)
+      post "/api/v1/workouts",
+        params: { workout: {
+          date: "2026-03-01", condition: 4,
+          workout_exercises_attributes: [{ exercise_id: exercise.id, order: 1 }]
+        } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["warmups"]).to eq([])
+    end
   end
 
   describe "GET /api/v1/workouts/:id" do
@@ -227,6 +257,20 @@ RSpec.describe "Workouts API", type: :request do
       expect(body["start_time"]).to be_nil
       expect(body["end_time"]).to be_nil
       expect(body["gym_type"]).to be_nil
+    end
+
+    it "replaces the warmup selection" do
+      warmup1 = create(:warmup)
+      warmup2 = create(:warmup)
+      workout.warmup_ids = [ warmup1.id ]
+
+      put "/api/v1/workouts/#{workout.id}",
+        params: { workout: { warmup_ids: [ warmup2.id ] } }.to_json,
+        headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["warmups"].map { |w| w["id"] }).to eq([ warmup2.id ])
     end
   end
 

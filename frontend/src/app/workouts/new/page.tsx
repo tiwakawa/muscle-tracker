@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getTokens, exercisesApi, workoutsApi, exerciseNotesApi } from "@/lib/api";
-import type { Exercise } from "@/lib/types";
+import { getTokens, exercisesApi, workoutsApi, exerciseNotesApi, warmupsApi } from "@/lib/api";
+import type { Exercise, Warmup } from "@/lib/types";
 import ConditionScale from "@/components/workout/ConditionScale";
 import DatePickerSheet from "@/components/workout/DatePickerSheet";
 import ReorderList from "@/components/workout/ReorderList";
@@ -82,6 +82,9 @@ export default function NewWorkoutPage() {
   const [endTime, setEndTime] = useState("");
   const [gymType, setGymType] = useState("");
   const [memo, setMemo] = useState("");
+  const [warmups, setWarmups] = useState<Warmup[]>([]);
+  const [selectedWarmupIds, setSelectedWarmupIds] = useState<number[]>([]);
+  const [warmupSectionOpen, setWarmupSectionOpen] = useState(false);
   const [blocks, setBlocks] = useState<ExerciseBlock[]>([]);
   const [lastSetsMap, setLastSetsMap] = useState<Record<string, { weight: string | null; reps: number | null }[]>>({});
   const focusSetIdRef = useRef<string | null>(null);
@@ -106,8 +109,15 @@ export default function NewWorkoutPage() {
   useEffect(() => {
     if (ready) {
       exercisesApi.list().then(setExercises).catch(console.error);
+      warmupsApi.list().then(setWarmups).catch(console.error);
     }
   }, [ready]);
+
+  const toggleWarmup = (id: number) => {
+    setSelectedWarmupIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
   const totalSets = blocks.reduce((a, b) => a + b.sets.length, 0);
   const totalVolume = blocks.reduce(
@@ -236,6 +246,7 @@ export default function NewWorkoutPage() {
         start_time: startTime || undefined,
         end_time: endTime || undefined,
         gym_type: gymType || undefined,
+        warmup_ids: selectedWarmupIds,
         workout_exercises_attributes,
       });
 
@@ -417,6 +428,53 @@ export default function NewWorkoutPage() {
               rows={3}
               className="flex-1 resize-none border-none outline-none bg-transparent text-sm text-gray-900 leading-relaxed placeholder:text-gray-400"
             />
+          </div>
+
+          <div className="h-px bg-black/[0.08]" />
+
+          {/* Warmup row (collapsible) */}
+          <div className="px-4 py-3">
+            <button
+              onClick={() => setWarmupSectionOpen(!warmupSectionOpen)}
+              className="flex items-center justify-between gap-3 w-full text-left"
+            >
+              <div className="flex-shrink-0 whitespace-nowrap">
+                <span className="text-xs font-semibold text-gray-500">ウォームアップ</span>
+                <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  {selectedWarmupIds.length > 0 ? `${selectedWarmupIds.length}件選択中` : "未選択"}
+                </span>
+                <svg
+                  className="text-gray-400 flex-shrink-0"
+                  width="14" height="14" viewBox="0 0 14 14" fill="none"
+                  style={{ transform: warmupSectionOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+                >
+                  <path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </button>
+            {warmupSectionOpen && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {warmups.map((wu) => {
+                  const active = selectedWarmupIds.includes(wu.id);
+                  return (
+                    <button
+                      key={wu.id}
+                      onClick={() => toggleWarmup(wu.id)}
+                      className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+                        active
+                          ? "border border-[#5b5bf2] bg-[#5b5bf2]/[0.07] text-[#5b5bf2]"
+                          : "border border-black/[0.08] bg-white text-gray-500"
+                      }`}
+                    >
+                      {wu.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

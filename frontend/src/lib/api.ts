@@ -125,6 +125,7 @@ export const workoutsApi = {
     start_time?: string;
     end_time?: string;
     gym_type?: string;
+    warmup_ids?: number[];
     workout_exercises_attributes?: {
       exercise_id: number;
       order: number;
@@ -146,6 +147,7 @@ export const workoutsApi = {
       start_time: string | null;
       end_time: string | null;
       gym_type: string | null;
+      warmup_ids: number[];
       workout_exercises_attributes: {
         id?: number;
         exercise_id?: number;

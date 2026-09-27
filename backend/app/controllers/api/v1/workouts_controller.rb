@@ -5,7 +5,7 @@ module Api
 
       def index
         workouts = current_user.workouts
-                               .includes(workout_exercises: [:exercise, :workout_sets])
+                               .includes(workout_exercises: [:exercise, :workout_sets], warmups: [])
                                .order(date: :desc)
         render json: workouts.map { |w| workout_as_json(w) }
       end
@@ -39,12 +39,15 @@ module Api
       private
 
       def set_workout
-        @workout = current_user.workouts.find(params[:id])
+        @workout = current_user.workouts
+                               .includes(workout_exercises: [:exercise, :workout_sets], warmups: [])
+                               .find(params[:id])
       end
 
       def workout_params
         params.require(:workout).permit(
           :date, :condition, :memo, :start_time, :end_time, :gym_type,
+          warmup_ids: [],
           workout_exercises_attributes: [
             :id, :exercise_id, :order, :memo, :side, :_destroy,
             workout_sets_attributes: [:id, :set_number, :weight, :reps, :_destroy]
@@ -56,7 +59,8 @@ module Api
         workout.as_json(include: {
           workout_exercises: {
             include: { exercise: {}, workout_sets: {} }
-          }
+          },
+          warmups: {}
         }).tap do |json|
           json["start_time"] = workout.start_time&.strftime("%H:%M")
           json["end_time"]   = workout.end_time&.strftime("%H:%M")

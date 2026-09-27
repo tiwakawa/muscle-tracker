@@ -33,4 +33,17 @@ RSpec.describe Warmup, type: :model do
       expect(subject.errors[:no]).to be_present
     end
   end
+
+  describe "associations" do
+    it { is_expected.to have_many(:workout_warmups).dependent(:destroy) }
+    it { is_expected.to have_many(:workouts).through(:workout_warmups) }
+
+    it "destroys dependent workout_warmups when the warmup is destroyed" do
+      warmup = create(:warmup)
+      workout_warmup = create(:workout_warmup, warmup: warmup)
+
+      expect { warmup.destroy }.to change(WorkoutWarmup, :count).by(-1)
+      expect(WorkoutWarmup.exists?(workout_warmup.id)).to be false
+    end
+  end
 end

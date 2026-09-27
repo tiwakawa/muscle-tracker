@@ -3,6 +3,8 @@ class Workout < ApplicationRecord
   has_many :workout_exercises, -> { order(:order) }, dependent: :destroy
   has_many :workout_sets, through: :workout_exercises
   has_many :ai_advices, dependent: :destroy
+  has_many :workout_warmups, dependent: :destroy
+  has_many :warmups, -> { order(:no) }, through: :workout_warmups
 
   accepts_nested_attributes_for :workout_exercises, allow_destroy: true
 
