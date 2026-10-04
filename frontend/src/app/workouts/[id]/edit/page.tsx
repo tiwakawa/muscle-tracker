@@ -519,7 +519,11 @@ export default function EditWorkoutPage() {
                 <span className="ml-1 text-[10px] font-medium text-gray-400">任意</span>
               </div>
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-sm text-gray-500 whitespace-nowrap">
+                <span
+                  className={`text-sm whitespace-nowrap ${
+                    selectedWarmupIds.length > 0 ? "font-semibold text-[#5b5bf2]" : "text-gray-500"
+                  }`}
+                >
                   {selectedWarmupIds.length > 0 ? `${selectedWarmupIds.length}件選択中` : "未選択"}
                 </span>
                 <svg
