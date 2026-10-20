@@ -54,7 +54,6 @@ export default function SettingsPage() {
     });
     warmupsApi.list().then((data) => {
       setWarmups(data);
-      if (data.length > 0) setSelectedWarmupNo(data[0].no);
     }).catch(() => {});
   }, [ready]);
 
@@ -90,7 +89,7 @@ export default function SettingsPage() {
       showToast("success", "Notionマスタを同期しました");
       warmupsApi.list().then((data) => {
         setWarmups(data);
-        if (data.length > 0 && selectedWarmupNo === null) setSelectedWarmupNo(data[0].no);
+        setSelectedWarmupNo((prev) => (prev !== null && data.some((w) => w.no === prev) ? prev : null));
       }).catch(() => {});
     } catch {
       showToast("error", "Notion同期に失敗しました");
@@ -140,60 +139,63 @@ export default function SettingsPage() {
           <div className="text-[10px] font-semibold text-gray-400 tracking-[0.12em] mb-1">WARMUP</div>
           <div className="text-[15px] font-bold text-gray-900 tracking-tight mb-3">ウォームアップ</div>
 
-          {warmups.length === 0 ? (
-            <div className="text-[11px] text-gray-400 text-center py-4">まだ同期されていません</div>
-          ) : (
-            <>
+          <div className="min-h-[50px] flex items-center mb-3">
+            {warmups.length === 0 ? (
+              <div className="w-full text-[11px] text-gray-400 text-center">まだ同期されていません</div>
+            ) : (
               <select
                 value={selectedWarmupNo ?? ""}
-                onChange={(e) => setSelectedWarmupNo(Number(e.target.value))}
-                className="w-full bg-[#F3F3F6] rounded-[10px] border border-black/[0.08] px-3 py-2.5 text-xs font-medium text-gray-900 mb-3 outline-none"
+                onChange={(e) => setSelectedWarmupNo(e.target.value ? Number(e.target.value) : null)}
+                className="w-full bg-[#F3F3F6] rounded-[10px] border border-black/[0.08] px-3 py-2.5 text-xs font-medium text-gray-900 outline-none"
               >
+                <option value="" disabled>
+                  選択してください
+                </option>
                 {warmups.map((w) => (
                   <option key={w.id} value={w.no}>
                     {w.no}. {w.name}
                   </option>
                 ))}
               </select>
+            )}
+          </div>
 
-              {selectedWarmup && (
-                <div>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {selectedWarmup.timing && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${ACCENT}12`, color: ACCENT }}>
-                        {selectedWarmup.timing}
-                      </span>
-                    )}
-                    {selectedWarmup.priority && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.priority}</span>
-                    )}
-                    {selectedWarmup.status && (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.status}</span>
-                    )}
-                    {selectedWarmup.category.map((c) => (
-                      <span key={c} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{c}</span>
-                    ))}
-                  </div>
-                  <div className="text-sm text-gray-700 leading-relaxed">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-1">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-base font-bold mt-4 mb-1">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-sm font-bold mt-3 mb-1">{children}</h3>,
-                        p: ({ children }) => <p className="mb-2">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
-                        li: ({ children }) => <li className="ml-2">{children}</li>,
-                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      }}
-                    >
-                      {selectedWarmup.body_markdown ?? ""}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              )}
-            </>
+          {selectedWarmup && (
+            <div>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {selectedWarmup.timing && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${ACCENT}12`, color: ACCENT }}>
+                    {selectedWarmup.timing}
+                  </span>
+                )}
+                {selectedWarmup.priority && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.priority}</span>
+                )}
+                {selectedWarmup.status && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{selectedWarmup.status}</span>
+                )}
+                {selectedWarmup.category.map((c) => (
+                  <span key={c} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-gray-100 text-gray-500">{c}</span>
+                ))}
+              </div>
+              <div className="text-sm text-gray-700 leading-relaxed">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-base font-bold mt-4 mb-1">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mt-4 mb-1">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mt-3 mb-1">{children}</h3>,
+                    p: ({ children }) => <p className="mb-2">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                    li: ({ children }) => <li className="ml-2">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                  }}
+                >
+                  {selectedWarmup.body_markdown ?? ""}
+                </ReactMarkdown>
+              </div>
+            </div>
           )}
         </div>
 
