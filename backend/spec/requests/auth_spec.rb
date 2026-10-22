@@ -4,25 +4,16 @@ RSpec.describe "Authentication", type: :request do
   let(:headers) { { "Content-Type" => "application/json", "Origin" => "http://localhost:3001" } }
 
   describe "POST /auth (sign up)" do
-    it "creates a user and returns auth tokens" do
-      post "/auth",
-        params: { email: "new@example.com", password: "password123", password_confirmation: "password123" }.to_json,
-        headers: headers
+    it "returns forbidden and does not create a user" do
+      expect {
+        post "/auth",
+          params: { email: "new@example.com", password: "password123", password_confirmation: "password123" }.to_json,
+          headers: headers
+      }.not_to change(User, :count)
 
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:forbidden)
       body = JSON.parse(response.body)
-      expect(body["data"]["email"]).to eq("new@example.com")
-      expect(response.headers["access-token"]).to be_present
-    end
-
-    it "returns errors for duplicate email" do
-      create(:user, email: "dup@example.com")
-
-      post "/auth",
-        params: { email: "dup@example.com", password: "password123", password_confirmation: "password123" }.to_json,
-        headers: headers
-
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(body["success"]).to eq(false)
     end
   end
 

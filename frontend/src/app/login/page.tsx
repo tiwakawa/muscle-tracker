@@ -81,18 +81,21 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm">
         {/* Tab (segmented control) */}
-        <div className="flex p-[3px] bg-[#F3F3F6] rounded-[10px] mb-6">
+        <div className="flex p-[3px] bg-[#F3F3F6] rounded-[10px] mb-3">
           {(["login", "signup"] as Mode[]).map((m) => {
             const active = mode === m;
+            const disabled = m === "signup";
             return (
               <button
                 key={m}
-                onClick={() => { setMode(m); setError(""); }}
-                className={`flex-1 py-2 rounded-lg text-[13px] transition-all ${
+                type="button"
+                disabled={disabled}
+                onClick={() => { if (disabled) return; setMode(m); setError(""); }}
+                className={`flex-1 py-2 rounded-lg text-[13px] transition-all disabled:cursor-not-allowed ${
                   active
                     ? "bg-white font-bold shadow-[0_1px_2px_rgba(15,18,40,0.08)]"
                     : "text-gray-500 font-medium"
-                }`}
+                } ${disabled ? "opacity-50" : ""}`}
                 style={{ color: active ? ACCENT : undefined }}
               >
                 {m === "login" ? "ログイン" : "新規登録"}
@@ -100,6 +103,10 @@ export default function LoginPage() {
             );
           })}
         </div>
+
+        <p className="text-[11px] font-medium text-center mb-4 px-1" style={{ color: "oklch(0.5 0.14 25)" }}>
+          現在新規登録は停止しています
+        </p>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
