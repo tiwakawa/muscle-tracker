@@ -13,6 +13,7 @@ exercises = [
   { name: "スクワット", category: "legs" },
   { name: "レッグプレス", category: "legs" },
   { name: "ランジ", category: "legs" },
+  { name: "ブルガリアンスクワット", category: "legs" },
   { name: "プランク", category: "core" },
   { name: "クランチ", category: "core" },
   { name: "ランニング", category: "cardio" },
