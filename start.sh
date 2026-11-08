@@ -11,4 +11,9 @@ export NOTION_TOKEN=$(security find-generic-password -a "$USER" -s "muscle-track
 export NOTION_EXERCISES_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-exercises-db-id" -w 2>/dev/null || echo "")
 export NOTION_WARMUPS_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-warmups-db-id" -w 2>/dev/null || echo "")
 
+# Claude専用Notionワークスペース（ウォームアップ・種目ミラー用、Keychain未登録の場合は空のまま起動）
+export NOTION_CLAUDE_TOKEN=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-claude-token" -w 2>/dev/null || echo "")
+export NOTION_CLAUDE_WARMUPS_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-claude-warmups-db-id" -w 2>/dev/null || echo "")
+export NOTION_CLAUDE_EXERCISES_DB_ID=$(security find-generic-password -a "$USER" -s "muscle-tracker-notion-claude-exercises-db-id" -w 2>/dev/null || echo "")
+
 docker compose up --force-recreate "$@"

@@ -29,6 +29,14 @@ module Notion
       end
     end
 
+    def create_page(database_id, properties)
+      post("/pages", { parent: { database_id: database_id }, properties: properties })
+    end
+
+    def update_page(page_id, body)
+      request(Net::HTTP::Patch, "/pages/#{page_id}", body: body)
+    end
+
     private
 
     def paginate

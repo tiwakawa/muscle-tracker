@@ -287,5 +287,38 @@ RSpec.describe NotionSyncService do
         expect { service.sync_all }.to raise_error(Notion::Client::ApiError)
       end
     end
+
+    context "when mirroring to the Claude workspace" do
+      before do
+        allow(client).to receive(:query_database).with("exercises-db").and_return([])
+        allow(client).to receive(:query_database).with("warmups-db").and_return([])
+      end
+
+      it "calls NotionMirrorService with the sync's current user" do
+        mirror_service = instance_double(NotionMirrorService, mirror_all: [])
+        expect(NotionMirrorService).to receive(:new).with(user: user).and_return(mirror_service)
+
+        service.sync_all
+      end
+
+      it "does not fail the whole sync when the mirror raises an unexpected error" do
+        allow(NotionMirrorService).to receive(:new).and_raise(KeyError, "key not found: \"NOTION_CLAUDE_TOKEN\"")
+
+        report = service.sync_all
+
+        expect(report.exercise_notes_skipped).to eq(0)
+        expect(report.warmups_skipped).to eq(0)
+        expect(report.errors.join).to include("Claude専用ワークスペースへのミラーに失敗しました")
+      end
+
+      it "merges errors returned by NotionMirrorService into the sync report" do
+        mirror_service = instance_double(NotionMirrorService, mirror_all: [ "ミラー書き込みに失敗(key=notion-page-1): Notion API error: 500" ])
+        allow(NotionMirrorService).to receive(:new).and_return(mirror_service)
+
+        report = service.sync_all
+
+        expect(report.errors).to include("ミラー書き込みに失敗(key=notion-page-1): Notion API error: 500")
+      end
+    end
   end
 end

@@ -71,4 +71,50 @@ RSpec.describe Notion::Client do
       expect(result).to eq([ { "id" => "block-a" }, { "id" => "block-b" } ])
     end
   end
+
+  describe "#create_page" do
+    it "wraps the given properties with the database parent" do
+      stub_request(:post, "https://api.notion.com/v1/pages")
+        .with(body: { parent: { database_id: database_id }, properties: { "名前" => { title: [] } } }.to_json)
+        .to_return(status: 200, body: { "id" => "page-new" }.to_json)
+
+      result = client.create_page(database_id, { "名前" => { title: [] } })
+
+      expect(result).to eq({ "id" => "page-new" })
+    end
+
+    it "raises ApiError when the API responds with an error" do
+      stub_request(:post, "https://api.notion.com/v1/pages").to_return(status: 400, body: { "message" => "Bad request" }.to_json)
+
+      expect { client.create_page(database_id, {}) }.to raise_error(Notion::Client::ApiError, /400/)
+    end
+  end
+
+  describe "#update_page" do
+    it "sends the given body as-is for a properties update" do
+      stub_request(:patch, "https://api.notion.com/v1/pages/page-123")
+        .with(body: { properties: { "名前" => { title: [] } } }.to_json)
+        .to_return(status: 200, body: { "id" => "page-123" }.to_json)
+
+      result = client.update_page("page-123", { properties: { "名前" => { title: [] } } })
+
+      expect(result).to eq({ "id" => "page-123" })
+    end
+
+    it "sends the given body as-is for an archive request, without wrapping it in properties" do
+      stub_request(:patch, "https://api.notion.com/v1/pages/page-123")
+        .with(body: { archived: true }.to_json)
+        .to_return(status: 200, body: { "id" => "page-123", "archived" => true }.to_json)
+
+      result = client.update_page("page-123", { archived: true })
+
+      expect(result).to eq({ "id" => "page-123", "archived" => true })
+    end
+
+    it "raises ApiError when the API responds with an error" do
+      stub_request(:patch, "https://api.notion.com/v1/pages/page-123").to_return(status: 404, body: { "message" => "Not found" }.to_json)
+
+      expect { client.update_page("page-123", { archived: true }) }.to raise_error(Notion::Client::ApiError, /404/)
+    end
+  end
 end

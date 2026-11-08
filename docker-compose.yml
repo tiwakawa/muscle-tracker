@@ -36,6 +36,9 @@ services:
       NOTION_TOKEN:
       NOTION_EXERCISES_DB_ID:
       NOTION_WARMUPS_DB_ID:
+      NOTION_CLAUDE_TOKEN:
+      NOTION_CLAUDE_WARMUPS_DB_ID:
+      NOTION_CLAUDE_EXERCISES_DB_ID:
     depends_on:
       db:
         condition: service_healthy
