@@ -288,7 +288,7 @@ RSpec.describe NotionSyncService do
       end
     end
 
-    context "when mirroring to the Claude workspace" do
+    context "when mirroring to the AI workspace" do
       before do
         allow(client).to receive(:query_database).with("exercises-db").and_return([])
         allow(client).to receive(:query_database).with("warmups-db").and_return([])
@@ -302,13 +302,13 @@ RSpec.describe NotionSyncService do
       end
 
       it "does not fail the whole sync when the mirror raises an unexpected error" do
-        allow(NotionMirrorService).to receive(:new).and_raise(KeyError, "key not found: \"NOTION_CLAUDE_TOKEN\"")
+        allow(NotionMirrorService).to receive(:new).and_raise(KeyError, "key not found: \"NOTION_AI_MIRROR_TOKEN\"")
 
         report = service.sync_all
 
         expect(report.exercise_notes_skipped).to eq(0)
         expect(report.warmups_skipped).to eq(0)
-        expect(report.errors.join).to include("Claude専用ワークスペースへのミラーに失敗しました")
+        expect(report.errors.join).to include("AI連携ワークスペースへのミラーに失敗しました")
       end
 
       it "merges errors returned by NotionMirrorService into the sync report" do

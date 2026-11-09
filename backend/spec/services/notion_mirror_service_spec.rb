@@ -6,20 +6,20 @@ RSpec.describe NotionMirrorService do
   let(:client) { instance_double(Notion::Client) }
 
   around do |example|
-    original_warmups_db_id = ENV["NOTION_CLAUDE_WARMUPS_DB_ID"]
-    original_exercises_db_id = ENV["NOTION_CLAUDE_EXERCISES_DB_ID"]
-    ENV["NOTION_CLAUDE_WARMUPS_DB_ID"] = "claude-warmups-db"
-    ENV["NOTION_CLAUDE_EXERCISES_DB_ID"] = "claude-exercises-db"
+    original_warmups_db_id = ENV["NOTION_AI_MIRROR_WARMUPS_DB_ID"]
+    original_exercises_db_id = ENV["NOTION_AI_MIRROR_EXERCISES_DB_ID"]
+    ENV["NOTION_AI_MIRROR_WARMUPS_DB_ID"] = "ai-mirror-warmups-db"
+    ENV["NOTION_AI_MIRROR_EXERCISES_DB_ID"] = "ai-mirror-exercises-db"
     example.run
-    ENV["NOTION_CLAUDE_WARMUPS_DB_ID"] = original_warmups_db_id
-    ENV["NOTION_CLAUDE_EXERCISES_DB_ID"] = original_exercises_db_id
+    ENV["NOTION_AI_MIRROR_WARMUPS_DB_ID"] = original_warmups_db_id
+    ENV["NOTION_AI_MIRROR_EXERCISES_DB_ID"] = original_exercises_db_id
   end
 
   subject(:service) { described_class.new(user: user, client: client) }
 
   before do
-    allow(client).to receive(:query_database).with("claude-warmups-db").and_return([])
-    allow(client).to receive(:query_database).with("claude-exercises-db").and_return([])
+    allow(client).to receive(:query_database).with("ai-mirror-warmups-db").and_return([])
+    allow(client).to receive(:query_database).with("ai-mirror-exercises-db").and_return([])
   end
 
   describe "#mirror_all" do
@@ -32,7 +32,7 @@ RSpec.describe NotionMirrorService do
 
       it "creates a page with the mapped properties" do
         expect(client).to receive(:create_page).with(
-          "claude-warmups-db",
+          "ai-mirror-warmups-db",
           {
             "名前" => { title: [ { text: { content: "肩甲骨はがし" } } ] },
             "部位・目的" => { multi_select: [ { name: "肩" }, { name: "胸" } ] },
@@ -69,7 +69,7 @@ RSpec.describe NotionMirrorService do
 
       it "includes the current user's note content" do
         expect(client).to receive(:create_page).with(
-          "claude-exercises-db",
+          "ai-mirror-exercises-db",
           {
             "名前" => { title: [ { text: { content: "スクワット" } } ] },
             "カテゴリ" => { select: { name: "legs" } },

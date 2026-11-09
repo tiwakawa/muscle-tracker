@@ -71,9 +71,9 @@ docker compose ps               # サービスの状態確認
   - `muscle-tracker-notion-token` → NOTION_TOKEN
   - `muscle-tracker-notion-exercises-db-id` → NOTION_EXERCISES_DB_ID
   - `muscle-tracker-notion-warmups-db-id` → NOTION_WARMUPS_DB_ID
-  - `muscle-tracker-notion-claude-token` → NOTION_CLAUDE_TOKEN（Claude専用Notionワークスペースへの書き込み用）
-  - `muscle-tracker-notion-claude-warmups-db-id` → NOTION_CLAUDE_WARMUPS_DB_ID
-  - `muscle-tracker-notion-claude-exercises-db-id` → NOTION_CLAUDE_EXERCISES_DB_ID
+  - `muscle-tracker-notion-ai-mirror-token` → NOTION_AI_MIRROR_TOKEN（AI連携Notionワークスペースへの書き込み用）
+  - `muscle-tracker-notion-ai-mirror-warmups-db-id` → NOTION_AI_MIRROR_WARMUPS_DB_ID
+  - `muscle-tracker-notion-ai-mirror-exercises-db-id` → NOTION_AI_MIRROR_EXERCISES_DB_ID
 - **DB接続**: docker-compose.ymlにハードコード（ローカル開発用）
 - 本番（Render/Vercel）の環境変数は各ダッシュボードで管理
 

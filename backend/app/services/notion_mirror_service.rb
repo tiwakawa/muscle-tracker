@@ -1,7 +1,7 @@
 class NotionMirrorService
   RICH_TEXT_CHUNK_SIZE = 2000
 
-  def initialize(user:, client: Notion::Client.new(api_key: ENV.fetch("NOTION_CLAUDE_TOKEN")))
+  def initialize(user:, client: Notion::Client.new(api_key: ENV.fetch("NOTION_AI_MIRROR_TOKEN")))
     @user = user
     @client = client
   end
@@ -15,7 +15,7 @@ class NotionMirrorService
   def mirror_warmups
     Notion::MirrorUpserter.call(
       client: @client,
-      database_id: ENV.fetch("NOTION_CLAUDE_WARMUPS_DB_ID"),
+      database_id: ENV.fetch("NOTION_AI_MIRROR_WARMUPS_DB_ID"),
       records: Warmup.all,
       source_key: ->(warmup) { warmup.notion_page_id }
     ) { |warmup, key| warmup_properties(warmup, key) }
@@ -26,7 +26,7 @@ class NotionMirrorService
 
     Notion::MirrorUpserter.call(
       client: @client,
-      database_id: ENV.fetch("NOTION_CLAUDE_EXERCISES_DB_ID"),
+      database_id: ENV.fetch("NOTION_AI_MIRROR_EXERCISES_DB_ID"),
       records: Exercise.find_each,
       source_key: ->(exercise) { "exercise-#{exercise.id}" }
     ) { |exercise, key| exercise_properties(exercise, notes_by_exercise_id[exercise.id], key) }

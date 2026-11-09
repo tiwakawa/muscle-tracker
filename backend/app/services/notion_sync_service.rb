@@ -17,7 +17,7 @@ class NotionSyncService
   def sync_all
     exercise_note_counts = sync_exercise_notes
     warmup_counts = sync_warmups
-    mirror_to_claude_workspace
+    mirror_to_ai_workspace
 
     Report.new(**exercise_note_counts, **warmup_counts, errors: @errors)
   end
@@ -26,11 +26,11 @@ class NotionSyncService
 
   # NotionMirrorService内部で捕捉しきれない想定外の例外(ENV変数未設定等)の最終防波堤。
   # レコード・孤立ページ単位の失敗はMirrorUpserter内で既に吸収され、エラー文字列として返ってくる。
-  def mirror_to_claude_workspace
+  def mirror_to_ai_workspace
     mirror_errors = NotionMirrorService.new(user: @user).mirror_all
     @errors.concat(mirror_errors)
   rescue => e
-    @errors << "Claude専用ワークスペースへのミラーに失敗しました: #{e.message}"
+    @errors << "AI連携ワークスペースへのミラーに失敗しました: #{e.message}"
   end
 
   def sync_exercise_notes
