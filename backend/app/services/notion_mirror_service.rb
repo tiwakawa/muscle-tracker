@@ -22,14 +22,14 @@ class NotionMirrorService
   end
 
   def mirror_exercises
-    notes_by_exercise_id = @user.exercise_notes.index_by(&:exercise_id)
+    notes = @user.exercise_notes.includes(:exercise)
 
     Notion::MirrorUpserter.call(
       client: @client,
       database_id: ENV.fetch("NOTION_AI_MIRROR_EXERCISES_DB_ID"),
-      records: Exercise.find_each,
-      source_key: ->(exercise) { "exercise-#{exercise.id}" }
-    ) { |exercise, key| exercise_properties(exercise, notes_by_exercise_id[exercise.id], key) }
+      records: notes,
+      source_key: ->(note) { "exercise-#{note.exercise_id}" }
+    ) { |note, key| exercise_properties(note.exercise, note, key) }
   end
 
   def warmup_properties(warmup, key)
@@ -49,7 +49,7 @@ class NotionMirrorService
     {
       "名前" => title_property(exercise.name),
       "カテゴリ" => select_property(exercise.category),
-      "メモ" => rich_text_property(note&.note.to_s),
+      "メモ" => rich_text_property(note.note.to_s),
       "ソースID" => rich_text_property(key)
     }
   end

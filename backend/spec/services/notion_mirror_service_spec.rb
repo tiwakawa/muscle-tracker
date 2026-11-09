@@ -82,26 +82,22 @@ RSpec.describe NotionMirrorService do
       end
     end
 
-    context "when mirroring an exercise that has no note from the current user" do
+    context "when an exercise has no note from the current user" do
       let!(:exercise) { create(:exercise) }
 
-      it "sends an empty string for the memo" do
-        expect(client).to receive(:create_page) do |_db_id, properties|
-          expect(properties["メモ"]).to eq({ rich_text: [] })
-        end
+      it "does not mirror the exercise at all" do
+        expect(client).not_to receive(:create_page)
 
         service.mirror_all
       end
     end
 
-    context "when another user has a note for the same exercise" do
+    context "when another user has a note for the same exercise but the current user does not" do
       let!(:exercise) { create(:exercise) }
       let!(:other_note) { create(:exercise_note, user: other_user, exercise: exercise, note: "他ユーザーのメモ") }
 
-      it "does not mix in the other user's note" do
-        expect(client).to receive(:create_page) do |_db_id, properties|
-          expect(properties["メモ"]).to eq({ rich_text: [] })
-        end
+      it "does not mirror the exercise for the current user" do
+        expect(client).not_to receive(:create_page)
 
         service.mirror_all
       end
