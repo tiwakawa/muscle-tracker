@@ -296,7 +296,7 @@ RSpec.describe NotionSyncService do
 
       it "calls NotionMirrorService with the sync's current user" do
         mirror_service = instance_double(NotionMirrorService, mirror_all: [])
-        expect(NotionMirrorService).to receive(:new).with(user: user).and_return(mirror_service)
+        expect(NotionMirrorService).to receive(:new).with(user: user, warmup_records: anything).and_return(mirror_service)
 
         service.sync_all
       end

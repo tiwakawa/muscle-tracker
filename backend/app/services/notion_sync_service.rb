@@ -27,7 +27,7 @@ class NotionSyncService
   # NotionMirrorService内部で捕捉しきれない想定外の例外(ENV変数未設定等)の最終防波堤。
   # レコード・孤立ページ単位の失敗はMirrorUpserter内で既に吸収され、エラー文字列として返ってくる。
   def mirror_to_ai_workspace
-    mirror_errors = NotionMirrorService.new(user: @user).mirror_all
+    mirror_errors = NotionMirrorService.new(user: @user, warmup_records: @warmup_mirror_records).mirror_all
     @errors.concat(mirror_errors)
   rescue => e
     @errors << "AI連携ワークスペースへのミラーに失敗しました: #{e.message}"
@@ -93,6 +93,7 @@ class NotionSyncService
     upserted = 0
     skipped = 0
     synced_page_ids = []
+    @warmup_mirror_records = []
 
     if pages.empty?
       @errors << "ウォームアップDBの取得結果が空だったため、ウォームアップの同期をスキップしました"
@@ -110,6 +111,10 @@ class NotionSyncService
 
       warmup = Warmup.find_or_initialize_by(notion_page_id: attrs[:notion_page_id])
       warmup.assign_attributes(attrs)
+
+      related_exercises = (page.dig("properties", "関連種目", "multi_select") || []).map { |o| o["name"] }
+      @warmup_mirror_records << { warmup: warmup, related_exercises: related_exercises }
+
       if warmup.save
         upserted += 1
       else

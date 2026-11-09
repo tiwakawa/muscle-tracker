@@ -1,8 +1,9 @@
 class NotionMirrorService
   RICH_TEXT_CHUNK_SIZE = 2000
 
-  def initialize(user:, client: Notion::Client.new(api_key: ENV.fetch("NOTION_AI_MIRROR_TOKEN")))
+  def initialize(user:, warmup_records:, client: Notion::Client.new(api_key: ENV.fetch("NOTION_AI_MIRROR_TOKEN")))
     @user = user
+    @warmup_records = warmup_records
     @client = client
   end
 
@@ -16,9 +17,9 @@ class NotionMirrorService
     Notion::MirrorUpserter.call(
       client: @client,
       database_id: ENV.fetch("NOTION_AI_MIRROR_WARMUPS_DB_ID"),
-      records: Warmup.all,
-      source_key: ->(warmup) { warmup.notion_page_id }
-    ) { |warmup, key| warmup_properties(warmup, key) }
+      records: @warmup_records,
+      source_key: ->(r) { r[:warmup].notion_page_id }
+    ) { |r, key| warmup_properties(r[:warmup], r[:related_exercises], key) }
   end
 
   def mirror_exercises
@@ -32,7 +33,7 @@ class NotionMirrorService
     ) { |note, key| exercise_properties(note.exercise, note, key) }
   end
 
-  def warmup_properties(warmup, key)
+  def warmup_properties(warmup, related_exercises, key)
     {
       "名前" => title_property(warmup.name),
       "部位・目的" => multi_select_property(warmup.category),
@@ -41,6 +42,7 @@ class NotionMirrorService
       "使用アイテム" => rich_text_property(warmup.items.join("、")),
       "本文" => rich_text_property(warmup.body_markdown.to_s),
       "状態" => select_property(warmup.status),
+      "関連種目" => multi_select_property(related_exercises),
       "ソースID" => rich_text_property(key)
     }
   end

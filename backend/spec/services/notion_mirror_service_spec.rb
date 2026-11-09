@@ -15,7 +15,9 @@ RSpec.describe NotionMirrorService do
     ENV["NOTION_AI_MIRROR_EXERCISES_DB_ID"] = original_exercises_db_id
   end
 
-  subject(:service) { described_class.new(user: user, client: client) }
+  let(:warmup_records) { [] }
+
+  subject(:service) { described_class.new(user: user, warmup_records: warmup_records, client: client) }
 
   before do
     allow(client).to receive(:query_database).with("ai-mirror-warmups-db").and_return([])
@@ -29,6 +31,7 @@ RSpec.describe NotionMirrorService do
           priority: "推奨", items: [ "チューブ", "フォームローラー" ], status: "実行中",
           body_markdown: "## やり方\n手順です")
       end
+      let(:warmup_records) { [ { warmup: warmup, related_exercises: [ "スクワット", "ラットプル" ] } ] }
 
       it "creates a page with the mapped properties" do
         expect(client).to receive(:create_page).with(
@@ -41,6 +44,7 @@ RSpec.describe NotionMirrorService do
             "使用アイテム" => { rich_text: [ { text: { content: "チューブ、フォームローラー" } } ] },
             "本文" => { rich_text: [ { text: { content: "## やり方\n手順です" } } ] },
             "状態" => { select: { name: "実行中" } },
+            "関連種目" => { multi_select: [ { name: "スクワット" }, { name: "ラットプル" } ] },
             "ソースID" => { rich_text: [ { text: { content: warmup.notion_page_id } } ] }
           }
         )
@@ -49,14 +53,16 @@ RSpec.describe NotionMirrorService do
       end
     end
 
-    context "when a warmup has no timing/priority/status set" do
+    context "when a warmup has no timing/priority/status/related_exercises set" do
       let!(:warmup) { create(:warmup, timing: nil, priority: nil, status: nil, items: []) }
+      let(:warmup_records) { [ { warmup: warmup, related_exercises: [] } ] }
 
-      it "sends a null select instead of omitting the property" do
+      it "sends a null select and an empty multi_select instead of omitting the properties" do
         expect(client).to receive(:create_page) do |_db_id, properties|
           expect(properties["タイミング"]).to eq({ select: nil })
           expect(properties["優先度"]).to eq({ select: nil })
           expect(properties["状態"]).to eq({ select: nil })
+          expect(properties["関連種目"]).to eq({ multi_select: [] })
         end
 
         service.mirror_all
@@ -105,6 +111,7 @@ RSpec.describe NotionMirrorService do
 
     context "when the warmup's body_markdown exceeds 2000 characters" do
       let!(:warmup) { create(:warmup, body_markdown: "あ" * 2500) }
+      let(:warmup_records) { [ { warmup: warmup, related_exercises: [] } ] }
 
       it "splits the rich_text into multiple chunks of at most 2000 characters" do
         expect(client).to receive(:create_page) do |_db_id, properties|
