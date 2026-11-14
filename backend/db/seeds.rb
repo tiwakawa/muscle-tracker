@@ -27,6 +27,8 @@ exercises = [
   { name: "アブドミナル", category: "core" },
   { name: "バックエクステンション", category: "back" },
   { name: "バーティカルロウ", category: "back" },
+  { name: "EMS", category: "other" },
+  { name: "施術", category: "other" },
 ]
 
 exercises.each do |attrs|
