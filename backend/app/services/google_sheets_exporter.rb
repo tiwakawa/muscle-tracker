@@ -72,8 +72,12 @@ class GoogleSheetsExporter
         rows << base + ["", "", "", "", "", ""]
       else
         workout.workout_exercises.order(:order).each do |we|
-          we.workout_sets.order(:set_number).each do |ws|
-            rows << base + [we.exercise&.name, we.side.presence, ws.set_number, ws.weight, ws.reps, we.memo]
+          if we.workout_sets.empty?
+            rows << base + [we.exercise&.name, we.side.presence, "", "", "", we.memo]
+          else
+            we.workout_sets.order(:set_number).each do |ws|
+              rows << base + [we.exercise&.name, we.side.presence, ws.set_number, ws.weight, ws.reps, we.memo]
+            end
           end
         end
       end
@@ -100,16 +104,20 @@ class GoogleSheetsExporter
     rows = [["日付", "種目", "サイド", "セット番号", "重量(kg)", "回数", "当日メモ"]]
     workouts.each do |workout|
       workout.workout_exercises.order(:order).each do |we|
-        we.workout_sets.order(:set_number).each do |ws|
-          rows << [
-            workout.date.to_s,
-            we.exercise&.name,
-            we.side.presence,
-            ws.set_number,
-            ws.weight,
-            ws.reps,
-            we.memo
-          ]
+        if we.workout_sets.empty?
+          rows << [workout.date.to_s, we.exercise&.name, we.side.presence, "", "", "", we.memo]
+        else
+          we.workout_sets.order(:set_number).each do |ws|
+            rows << [
+              workout.date.to_s,
+              we.exercise&.name,
+              we.side.presence,
+              ws.set_number,
+              ws.weight,
+              ws.reps,
+              we.memo
+            ]
+          end
         end
       end
     end
