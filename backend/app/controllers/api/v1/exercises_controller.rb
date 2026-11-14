@@ -4,7 +4,7 @@ module Api
       before_action :set_exercise, only: [:show, :update, :destroy, :last_sets, :weight_history]
 
       def index
-        exercises = Exercise.order(:category, :name)
+        exercises = Exercise.all.sort_by { |e| [ Exercise::CATEGORIES.index(e.category) || Exercise::CATEGORIES.size, e.name ] }
         render json: exercises
       end
 

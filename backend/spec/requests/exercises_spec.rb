@@ -19,6 +19,29 @@ RSpec.describe "Exercises API", type: :request do
       expect(body).to be_an(Array)
       expect(body.map { |e| e["name"] }).to include("ベンチプレス")
     end
+
+    it "orders exercises by category order (chest...other) then by name" do
+      create(:exercise, name: "施術", category: "other")
+      create(:exercise, name: "スクワット", category: "legs")
+      create(:exercise, name: "ベンチプレス", category: "chest")
+
+      get "/api/v1/exercises", headers: headers
+      body = JSON.parse(response.body)
+      names = body.map { |e| e["name"] }
+
+      expect(names.index("ベンチプレス")).to be < names.index("スクワット")
+      expect(names.index("スクワット")).to be < names.index("施術")
+    end
+
+    it "does not crash when an exercise has a category outside CATEGORIES (legacy data)" do
+      legacy = create(:exercise, name: "レガシー種目", category: "chest")
+      legacy.update_column(:category, "unknown")
+
+      get "/api/v1/exercises", headers: headers
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body.map { |e| e["name"] }).to include("レガシー種目")
+    end
   end
 
   describe "GET /api/v1/exercises/:id" do
